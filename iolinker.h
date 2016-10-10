@@ -91,6 +91,7 @@ class iolinker {
             ERROR = 0x02,
             ERROR_ARGCOUNT = 0x03,
             ERROR_PINNUM = 0x04,
+            ERROR_INTERFACE = 0xfc,
             ERROR_NOREPLY = 0xfd,
             ERROR_CRC = 0xff,
         } status_code;

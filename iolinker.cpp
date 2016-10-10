@@ -266,18 +266,27 @@ void iolinker::reset(void)
 
 uint16_t iolinker::firstAddress(void)
 {
-    // TODO
+    uint8_t addr = 1;
+    for (; targetAddress(addr) && !available() && addr <= TARGET_MAX; addr++);
+    return ((addr > TARGET_MAX) ? 0 : addr);
 }
 
 uint16_t iolinker::chainLength(uint8_t start)
 {
-    // TODO
+    uint8_t len = 0;
+    for (; targetAddress(start + len) && available(); len++);
+    return len;
 }
 
 bool iolinker::readReply(uint8_t *s, uint8_t len)
 {
 #ifdef WIRINGPI
-        // TODO
+    if (interface_fd == -1) {
+        status = ERROR_INTERFACE;
+        return false;
+    }
+    
+    read(interface_fd, s, len);
 #elif ARDUINO
     if (interface_mode == I2C) {
         // TODO
@@ -303,7 +312,6 @@ bool iolinker::readReply(uint8_t *s, uint8_t len)
 
 void iolinker::write(uint8_t *s, uint8_t len)
 {
-    // TODO
 #ifdef WIRINGPI
     /* Should work for UART, SPI and I2C alike. */
     write(interface_fd, s, len);
