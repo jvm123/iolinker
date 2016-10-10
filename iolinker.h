@@ -47,13 +47,17 @@ class iolinker {
 #ifdef WIRINGPI
         void beginSerial(unsigned char *dev); /* Setup serial interface */
 #define __IOLINKER_SPI_CLK (32000000UL)
+        
         void beginSPI(uint8_t channel);  /* Setup SPI master */
+        
         void beginI2C(void); /* Setup  I2C master */
 
 #elif ARDUINO
         void beginStream(Stream &stream); /* Setup serial interface */
-#define __IOLINKER_SPI_CS (10)
+
+#define __IOLINKER_SPI_CS (10)        
         void beginSPI(void);  /* Setup SPI master */
+        
         void beginI2C(void); /* Setup  I2C master */
 
 #else
@@ -61,6 +65,7 @@ class iolinker {
 #endif
 
         typedef uint8_t (*testfunc_t)(unsigned char *s, uint8_t len);
+        
         void beginTest(testfunc_t testfunc, uint8_t *buf, uint8_t size); /* Messages are written into the string pointer *buf, until at message end the provided callback function is run, that provides its reply in the same buffer *buf. Can be used for unit testing. */
 
 
@@ -89,6 +94,7 @@ class iolinker {
             ERROR_NOREPLY = 0xfd,
             ERROR_CRC = 0xff,
         } status_code;
+        
         status_code statusCode(void); /* Return status code of last reply */
 
         bool available(void); /* Check chip availability */
@@ -279,6 +285,7 @@ class iolinker {
         void write(uint8_t *s, uint8_t len); /* Write out additional message
                                                 part */
         bool writeCRC(void); /* Write out CRC if applicable */
+        
         bool readReply(uint8_t *s = NULL, uint8_t len = 0); /* Read reply of the given max length into the buffer, verify CRC if applicable, and save status code for the statusCode() function. Return false and set status code to ERROR_CRC on CRC failure or no received reply, otherwise return true. */
 };
 
