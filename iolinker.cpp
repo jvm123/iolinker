@@ -51,15 +51,15 @@ void iolinker::beginSerial(unsigned char *dev)
 
 /** Messages **/
         
-uint8_t iolinker::version(void)
+uint16_t iolinker::version(void)
 {
-    uint8_t buf;
+    uint8_t *buf;
     writeCmd(CMD_VER);
     writeCRC();
-    if (!readReply(&buf, 0)) {
+    if (!readReply(buf, 2)) {
         return 0;
     }
-    return buf;
+    return (buf[0] << 8 | buf[1]);
 }
 
 void iolinker::setPinType(pin_types type, uint16_t pin_start, uint16_t pin_end)
