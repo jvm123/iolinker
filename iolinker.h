@@ -27,18 +27,20 @@ PC Unit test runs unit test only.
 
 #include <stdlib.h>
 #include <stdint.h>
+#define max(a,b) (a>b?a:b)
 
 #ifdef WIRINGPI
 #include <wiringSerial.h>
 #include <wiringPiSPI.h>
 #include <wiringPiI2C.h>
-#elif ARDUINO
+#elif defined(ARDUINO)
 #include "Arduino.h"
 #elif !defined(__PC)
 #define __PC
 #endif
 
 #define __IOLINKER_DEBUG (1) /* Activate debugging output */
+
 
 class iolinker {
     public:
@@ -52,13 +54,31 @@ class iolinker {
         
         void beginI2C(void); /* Setup  I2C master */
 
-#elif ARDUINO
-        void beginStream(Stream &stream); /* Setup serial interface */
+#elif defined(ARDUINO)
+        /* Setup serial interface */
+        inline void beginStream(Stream &stream)
+        {
+            interface_mode = UART;
+            interface_stream = &stream;
+        }
 
 #define __IOLINKER_SPI_CS (10)        
-        void beginSPI(void);  /* Setup SPI master */
+        /* Setup SPI master */
+        inline void beginSPI(void)
+        {
+            interface_mode = SPI;
+            SPI.begin();
+            initSS();
+            SPI.setClockDivider(SPI_CS, 21);
+            SPI.setDataMode(SPI_CS, SPI_MODE0);
+        }
         
-        void beginI2C(void); /* Setup  I2C master */
+        /* Setup  I2C master */
+        inline void beginI2C(void)
+        {
+            interface_mode = I2C;
+            Wire.begin();
+        }
 
 #else
         void beginSerial(unsigned char *dev); /* Setup serial interface */
@@ -66,7 +86,15 @@ class iolinker {
 
         typedef uint8_t (*testfunc_t)(unsigned char *s, uint8_t len);
         
-        void beginTest(testfunc_t testfunc, uint8_t *buf, uint8_t size); /* Messages are written into the string pointer *buf, until at message end the provided callback function is run, that provides its reply in the same buffer *buf. Can be used for unit testing. */
+        /* Messages are written into the string pointer *buf, until at message end the provided callback function is run, that provides its reply in the same buffer *buf. Can be used for unit testing. */
+        inline void beginTest(testfunc_t testfunc, uint8_t *buf, uint8_t size)
+        {
+            interface_mode = INTERFACE_UNCLEAR;
+            interface_testfunc = testfunc;
+            interface_buf = buf;
+            interface_buf_reset = buf;
+            interface_buf_end = buf + size;
+        }
 
 
         /** Message preparation **/
@@ -77,11 +105,37 @@ class iolinker {
             TARGET_MAX = 0x7f,
         } target_address;
 
-        void targetAddress(uint8_t addr); /* Choose slave address */
+        /* Choose slave address */
+        inline void targetAddress(uint8_t addr)
+        {
+#ifdef WIRINGPI
+            if (interface_mode == I2C && target_addr != addr) {
+                interface_fd = wiringPiI2CSetup(addr);
+            }
+#endif
 
-        void buffer(bool active); /* Turn buffering on or off for following messages */
+            target_addr = addr;
+        }
 
-        void crc(bool active); /* Turn CRC error detection on or off for following messages */
+        /* Turn buffering on or off for following messages */
+        inline void buffer(bool active)
+        {
+            if (active) {
+                cmdbyte |= BITMASK_BUF_BIT;
+            } else {
+                cmdbyte &= ~(BITMASK_BUF_BIT);
+            }
+        }
+
+        /* Turn CRC error detection on or off for following messages */
+        inline void crc(bool active)
+        {
+            if (active) {
+                cmdbyte |= BITMASK_CRC_BIT;
+            } else {
+                cmdbyte &= ~(BITMASK_CRC_BIT);
+            }
+        }
 
         /** Status codes **/
 
@@ -96,18 +150,46 @@ class iolinker {
             ERROR_CRC = 0xff,
         } status_code;
         
-        status_code statusCode(void); /* Return status code of last reply */
+        /* Return status code of last reply */
+        inline status_code statusCode(void)
+        {
+            return status;
+        }
 
-        bool available(void); /* Check chip availability */
+        /* Check chip availability */
+        inline bool available(void)
+        {
+            version();
+            return (statusCode() == STATUS_SUCCESS);
+        }
 
 
         /** Messages **/
 
-        uint16_t version(void); /* VER command: Retrieve chip version */
+        /* VER command: Retrieve chip version */
+        uint8_t version(void);
 
-        uint16_t pinCount(void); /* VER command: Retrieve chip version and derive pin count */
+        /* Derive pin count from chip version byte */
+        inline uint16_t pinCount(uint8_t version)
+        {
+            switch (version & 0x0f) {
+                case 0:
+                    return 14;
+                case 1:
+                    return 49;
+                case 2:
+                    return 64;
+                case 3:
+                    return 192;
+            }
+            return 0;
+        }
 
-        bool isProVersion(void); /* VER command: Retrieve chip version and derive whether it is a basic / pro chip version */
+        /* Derive pro version status from chip version byte */
+        inline bool isProVersion(uint8_t version)
+        {
+            return ((version & (1 << 7)) == 1);
+        }
 
         typedef enum pin_types {
             INPUT = 0x00,
@@ -153,14 +235,14 @@ class iolinker {
             BITMASK_RW_BIT = (1 << 6),
             BITMASK_BUF_BIT = (1 << 5),
             BITMASK_CRC_BIT = (1 << 4),
-            BITMASK_CMD = 0x4f, /* Include the RW bit as part of the command
-                                   code */
+            BITMASK_CMD = 0x4f, /*< Includes the RW bit as part of the command
+                                    code */
             BITMASK_DATA = 0x7f,
             BITMASK_PIN_ADDR = 0x7ff,
         };
 
         status_code status = STATUS_UNDEFINED;
-        uint8_t crc = 0;
+        uint8_t __crc = 0;
         uint8_t target_addr = TARGET_ALL; /*< Current target address */
         uint8_t cmdbyte = BITMASK_CMD_BIT;
         
@@ -173,12 +255,13 @@ class iolinker {
         
 #ifndef ARDUINO
         testfunc_t interface_testfunc;
-        unsigned char *interface_buf, *interface_buf_reset;
+        unsigned char *interface_buf, *interface_buf_reset,
+                      *interface_buf_end;
 #else
         Stream *interface_stream;
 #endif
 
-#ifdef WIRINGPI
+#if defined(WIRINGPI) || defined(__PC)
         int interface_fd;
 #endif
 
@@ -280,14 +363,19 @@ class iolinker {
             }
             return pin2 - pin1;
         }
+        
+        bool readReply(uint8_t *s = NULL, uint8_t len = 0); /* Read reply of the given max length into the buffer, verify CRC if applicable, and save status code for the statusCode() function. Return false and set status code to ERROR_CRC on CRC failure or no received reply, otherwise return true. */
 
         void writeCmd(cmd_t cmd); /* Reset CRC and write out command +
                                      address byte, if applicable */
-        void write(uint8_t *s, uint8_t len); /* Write out additional message
+        void writeMsg(uint8_t *s, uint8_t len); /* Write out additional message
                                                 part */
-        bool writeCRC(void); /* Write out CRC if applicable */
         
-        bool readReply(uint8_t *s = NULL, uint8_t len = 0); /* Read reply of the given max length into the buffer, verify CRC if applicable, and save status code for the statusCode() function. Return false and set status code to ERROR_CRC on CRC failure or no received reply, otherwise return true. */
+        /* Write out CRC if applicable */
+        inline bool writeCRC(void)
+        {
+            writeMsg(&__crc, 1);
+        }
 };
 
 #endif /* __IOLINKER_H__ */
