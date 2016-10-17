@@ -3,24 +3,13 @@
  * MIT License
  * --
  * http://jinvent.de/iolinker
- * iolinker class header
- **/
+ */
 
-/* TODO: Doxygen
-
-Inspiration:
-    cd /home/jvm/bin/progs/arduino-1.7.11-linux32/libraries/
-
-    Serial/Stream https://github.com/andrewrapp/xbee-arduino/blob/master/XBee.cpp
-    SPI Ethernet/src/utility/w5100.h
-    I2C LuckyShield/src/lib/BME280.cpp https://github.com/adafruit/Adafruit-BMP085-Library/blob/master/Adafruit_BMP085.cpp
-
-    Raspberry: http://wiringpi.com/reference/serial-library/ https://learn.sparkfun.com/tutorials/raspberry-pi-spi-and-i2c-tutorial
-
-Arduino self-test example includes unit test (on device), chain scan and serial debugging output.
-Raspberry self-test example includes unit test, chain scan.
-PC Unit test runs unit test only.
-*/
+/**
+ * @file iolinker.h
+ * @author Julian von Mendel
+ * @brief iolinker class header
+ */
 
 #ifndef __IOLINKER_H__
 #define __IOLINKER_H__
@@ -39,7 +28,7 @@ PC Unit test runs unit test only.
 #define __PC
 #endif
 
-#define __IOLINKER_DEBUG (1) /* Activate debugging output */
+#define __IOLINKER_DEBUG (1) /*!< Activate debugging output */
 
 
 class iolinker {
@@ -47,15 +36,26 @@ class iolinker {
 #define __IOLINKER_BAUDRATE (115200)
 
 #ifdef WIRINGPI
-        void beginSerial(unsigned char *dev); /* Setup serial interface */
+        /**
+         * @brief Setup serial interface
+         */
+        void beginSerial(unsigned char *dev);
 #define __IOLINKER_SPI_CLK (32000000UL)
         
-        void beginSPI(uint8_t channel);  /* Setup SPI master */
+        /**
+         * @brief Setup SPI master
+         */
+        void beginSPI(uint8_t channel);
         
-        void beginI2C(void); /* Setup  I2C master */
+        /**
+         * @brief Setup  I2C master
+         */
+        void beginI2C(void);
 
 #elif defined(ARDUINO)
-        /* Setup serial interface */
+        /**
+         * @brief Setup serial interface
+         */
         inline void beginStream(Stream &stream)
         {
             interface_mode = UART;
@@ -63,7 +63,9 @@ class iolinker {
         }
 
 #define __IOLINKER_SPI_CS (10)        
-        /* Setup SPI master */
+        /**
+         * @brief Setup SPI master
+         */
         inline void beginSPI(void)
         {
             interface_mode = SPI;
@@ -73,7 +75,9 @@ class iolinker {
             SPI.setDataMode(SPI_CS, SPI_MODE0);
         }
         
-        /* Setup  I2C master */
+        /**
+         * @brief Setup  I2C master
+         */
         inline void beginI2C(void)
         {
             interface_mode = I2C;
@@ -81,12 +85,25 @@ class iolinker {
         }
 
 #else
-        void beginSerial(unsigned char *dev); /* Setup serial interface */
+        /**
+         * @brief Setup serial interface
+         */
+        void beginSerial(unsigned char *dev);
 #endif
 
+        /**
+         * @brief Function type for the beginTest() callback interface
+         */
         typedef uint8_t (*testfunc_t)(unsigned char *s, uint8_t len);
         
-        /* Messages are written into the string pointer *buf, until at message end the provided callback function is run, that provides its reply in the same buffer *buf. Can be used for unit testing. */
+        /**
+         * @brief Initialize communication by means of a callback function
+         *      that handles the communication
+         *
+         * Messages are written into the string pointer *buf, until at message
+         * end the provided callback function is run, that provides its reply
+         * in the same buffer *buf. Can be used for unit testing.
+         */
         inline void beginTest(testfunc_t testfunc, uint8_t *buf, uint8_t size)
         {
             interface_mode = INTERFACE_UNCLEAR;
@@ -99,13 +116,18 @@ class iolinker {
 
         /** Message preparation **/
 
+        /**
+         * @brief Node target addresses
+         */
         typedef enum target_address {
             TARGET_ALL = 0x00,
             TARGET_FIRST = 0x01,
             TARGET_MAX = 0x7f,
         } target_address;
 
-        /* Choose slave address */
+        /**
+         * @brief Choose slave address
+         */
         inline void targetAddress(uint8_t addr)
         {
 #ifdef WIRINGPI
@@ -117,7 +139,9 @@ class iolinker {
             target_addr = addr;
         }
 
-        /* Turn buffering on or off for following messages */
+        /**
+         * @brief Turn buffering on or off for following messages
+         */
         inline void buffer(bool active)
         {
             if (active) {
@@ -127,7 +151,9 @@ class iolinker {
             }
         }
 
-        /* Turn CRC error detection on or off for following messages */
+        /**
+         * @brief Turn CRC error detection on or off for following messages
+         */
         inline void crc(bool active)
         {
             if (active) {
@@ -139,6 +165,9 @@ class iolinker {
 
         /** Status codes **/
 
+        /**
+         * @brief Return status codes
+         */
         typedef enum status_code {
             STATUS_UNDEFINED = 0x00,
             STATUS_SUCCESS = 0x01,
@@ -150,13 +179,18 @@ class iolinker {
             ERROR_CRC = 0xff,
         } status_code;
         
-        /* Return status code of last reply */
+        /**
+         * @brief Retrieve the return status code of last reply
+         */
         inline status_code statusCode(void)
         {
             return status;
         }
 
-        /* Check chip availability */
+        /**
+         * @brief Check chip availability
+         * @return Returns true if the chip replied, and false otherwise
+         */
         inline bool available(void)
         {
             version();
@@ -166,10 +200,16 @@ class iolinker {
 
         /** Messages **/
 
-        /* VER command: Retrieve chip version */
+        /**
+         * @brief VER command: Retrieve chip version
+         * @return Returns the received chip version byte, or 0 if no valid
+         *      reply was received
+         */
         uint8_t version(void);
 
-        /* Derive pin count from chip version byte */
+        /**
+         * @brief Derive pin count from chip version byte
+         */
         inline uint16_t pinCount(uint8_t version)
         {
             switch (version & 0x0f) {
@@ -185,67 +225,137 @@ class iolinker {
             return 0;
         }
 
-        /* Derive pro version status from chip version byte */
+        /**
+         * @brief Derive pro version status from chip version byte
+         */
         inline bool isProVersion(uint8_t version)
         {
             return ((version & (1 << 7)) == 1);
         }
 
+        /**
+         * @brief Pin type codes
+         */
         typedef enum pin_types {
             INPUT = 0x00,
             PULLDOWN = 0x01,
             PULLUP = 0x02,
             OUTPUT = 0x03,
         } pin_types;
-        void setPinType(pin_types type, uint16_t pin_start, uint16_t pin_end = 0); /* TYP command: Set pin type */
 
-        bool readInput(uint16_t pin); /* REA command: Read input state */
+        /**
+         * @brief TYP command: Set pin type
+         */
+        void setPinType(pin_types type, uint16_t pin_start,
+                uint16_t pin_end = 0);
 
-        void readInput(uint8_t *s, uint8_t len, uint16_t pin_start, uint16_t pin_end = 0); /* REA command: Read input pin range and store value in buffer */
+        /**
+         * @brief REA command: Read input state
+         */
+        bool readInput(uint16_t pin);
 
-        void setOutput(bool state, uint16_t pin_start, uint16_t pin_end = 0); /* SET command: Set output pin states */
+        /**
+         * @brief REA command: Read input pin range and store value in
+         *      buffer
+         */
+        void readInput(uint8_t *s, uint8_t len, uint16_t pin_start,
+                uint16_t pin_end = 0);
 
-        void setOutput(uint8_t *s, uint8_t len, uint16_t pin_start, uint16_t pin_end = 0); /* SET command: Set output pin states */
+        /**
+         * @brief SET command: Set output pin states
+         */
+        void setOutput(bool state, uint16_t pin_start, uint16_t pin_end = 0);
 
-        void syncOutputsToBuffer(void); /* SYN command */
+        /**
+         * @brief SET command: Set output pin states
+         */
+        void setOutput(
+                uint8_t *s,
+                uint8_t len,
+                uint16_t pin_start,
+                uint16_t pin_end = 0);
 
-        void syncBufferToOutputs(void); /* TRG command */
+        /**
+         * @brief SYN command
+         */
+        void syncOutputsToBuffer(void);
 
-        void link(uint16_t target_pin, uint16_t pin_start, uint16_t pin_end = 0); /* LNK command: Link pins */
+        /**
+         * @brief TRG command
+         */
+        void syncBufferToOutputs(void);
 
-        void pwm(uint8_t pwm_r, uint16_t pin_start, uint16_t pin_end = 0); /* PWM command */
+        /**
+         * @brief LNK command: Link pins
+         */
+        void link(uint16_t target_pin, uint16_t pin_start, uint16_t pin_end = 0);
 
-        void pwmPeriod(uint8_t per); /* PER command */
+        /**
+         * @brief PWM command
+         */
+        void pwm(uint8_t pwm_r, uint16_t pin_start, uint16_t pin_end = 0);
 
-        void reset(void); /* RST command */
+        /**
+         * @brief PER command
+         */
+        void pwmPeriod(uint8_t per);
+
+        /**
+         * @brief RST command
+         */
+        void reset(void);
 
 
         /** Chip chain scanning **/
 
-        uint16_t firstAddress(void); /* Try version retrieval for addresses starting at 1 and count up, return first address that lead to a reply. If all 127 addresses fail, return 0. */
+        /**
+         * @brief Try version retrieval for addresses starting at 1 and
+         *      count up, return first address that lead to a reply. If
+         *      all 127 addresses fail, return 0.
+         * @return Returns the first node address that replied, or 0 if none
+         *      worked.
+         */
+        uint16_t firstAddress(void);
 
-        uint16_t chainLength(uint8_t start = 1); /* Try version retrieval for addresses starting at 'start' and counting up until it fails, return highest address that worked */ 
+        /**
+         * @brief Try version retrieval for addresses starting at 'start' and
+         *      counting up until it fails, return highest address that
+         *      worked
+         * @return Returns the length of the chai, or 0 if not even the first
+         *      node replied.
+         */
+        uint16_t chainLength(uint8_t start = 1);
 
-#if defined(ARDUINO) || defined(WIRINGPI) /* Avoid private methods in PC unit test */
+#if defined(ARDUINO) || defined(WIRINGPI) /* Avoid private methods in PC
+                                             unit test */
     private:
 #endif
 
+        /**
+         * @brief Bit masks for the iolinker protocol
+         */
         enum bit_pos {
             BITMASK_CMD_BIT = (1 << 7),
             BITMASK_RW_BIT = (1 << 6),
             BITMASK_BUF_BIT = (1 << 5),
             BITMASK_CRC_BIT = (1 << 4),
-            BITMASK_CMD = 0x4f, /*< Includes the RW bit as part of the command
+            BITMASK_CMD = 0x4f, /*!< Includes the RW bit as part of the command
                                     code */
             BITMASK_DATA = 0x7f,
             BITMASK_PIN_ADDR = 0x7ff,
         };
 
-        status_code status = STATUS_UNDEFINED;
-        uint8_t __crc = 0;
-        uint8_t target_addr = TARGET_ALL; /*< Current target address */
-        uint8_t cmdbyte = BITMASK_CMD_BIT;
+        status_code status = STATUS_UNDEFINED; /*!< Return status of the last
+                                                    command sent to iolinker
+                                                    chip */
+        uint8_t __crc = 0; /*!< CRC of the message currently being
+                                constructed */
+        uint8_t target_addr = TARGET_ALL; /*!< Current target address */
+        uint8_t cmdbyte = BITMASK_CMD_BIT; /*!< Current command byte */
         
+        /**
+         * @brief Communication interface identifier
+         */
         enum interface_mode {
             UART = 0,
             SPI,
@@ -254,15 +364,18 @@ class iolinker {
         } interface_mode;
         
 #ifndef ARDUINO
-        testfunc_t interface_testfunc;
+        testfunc_t interface_testfunc; /*!< testfunc interface function
+                                            pointer */
         unsigned char *interface_buf, *interface_buf_reset,
-                      *interface_buf_end;
+                      *interface_buf_end; /*!< String buffers the testfunc
+                                               interface uses to communicate
+                                               with the user methods */
 #else
-        Stream *interface_stream;
+        Stream *interface_stream; /*!< Stream object of serial interface */
 #endif
 
 #if defined(WIRINGPI) || defined(__PC)
-        int interface_fd;
+        int interface_fd; /*!< File descriptor for communication interface */
 #endif
 
         /** Protocol format **/
@@ -273,18 +386,91 @@ class iolinker {
            out if CRC is not active.
         */
 
+        /**
+         * @brief Extract state of BITMASK_CMD_BIT from byte
+         */
+
+        inline bool cmdBitOn(uint8_t b)
+        {
+            return ((b & BITMASK_CMD_BIT) != 0);
+        }
+        
+        /**
+         * @brief Extract state of BITMASK_RW_BIT from byte
+         */
+        inline bool rwBitOn(uint8_t b)
+        {
+            return ((b & BITMASK_RW_BIT) != 0);
+        }
+        
+        /**
+         * @brief Extract state of BITMASK_BUF_BIT from byte
+         */
+        inline bool bufBitOn(uint8_t b)
+        {
+            return ((b & BITMASK_BUF_BIT) != 0);
+        }
+        
+        /**
+         * @brief Extract state of BITMASK_CRC_BIT from byte
+         */
+        inline bool crcBitOn(uint8_t b)
+        {
+            return ((b & BITMASK_CRC_BIT) != 0);
+        }
+        
+        /**
+         * @brief Extract command code from byte
+         */
+        inline uint8_t commandCode(uint8_t b)
+        {
+            return (b & BITMASK_CMD);
+        }
+        
+        /**
+         * @brief Extract argument code from byte
+         */
+        inline uint8_t argData(uint8_t b)
+        {
+            return (b & BITMASK_DATA);
+        }
+
+        /**
+         * @brief Return the command byte in the string buffer
+         * @param buf String buffer containing one entire message
+         * @param len String length
+         * @return The command byte
+         */
         inline uint8_t cmdByte(uint8_t *buf, uint8_t len)
         {
-            if (len < 1) {
+            if (len < 1 || ((buf[0] && BITMASK_CMD_BIT) != BITMASK_CMD_BIT)) {
                 return 0;
             }
             return buf[0];
         }
+        
+        /**
+         * @brief Determine the number of address bytes for the current
+         *      communication interface
+         * @return Number of address bytes that is supposed to be contained
+         *      in every message
+         */
+        inline uint8_t addrByteCount(void)
+        {
+            return ((interface_mode == I2C) ? 0 : 1);
+        }
+        
+        /**
+         * @brief Return the address byte in the string buffer
+         * @param buf String buffer containing one entire message
+         * @param len String length
+         * @return The address byte
+         */
         inline uint8_t addrByte(uint8_t *buf, uint8_t len)
         {
-            if (interface_mode == I2C) {
-                /* In I2C mode, the address byte is not part of the message
-                   content. */
+            if (addrByteCount() == 0) {
+                /* If no address byte is available within the message, we
+                   return the one stored in buffer */
                 return target_addr;
             }
 
@@ -293,10 +479,14 @@ class iolinker {
             }
             return buf[1];
         }
-        inline uint8_t addrByteCount(void)
-        {
-            return ((interface_mode == I2C) ? 0 : 1);
-        }
+        
+        /**
+         * @brief Return a byte argument from string buffer
+         * @param buf String buffer containing one entire message
+         * @param len String length
+         * @param i Argument index
+         * @return The argument byte
+         */
         inline uint8_t argByte(uint8_t *buf, uint8_t len, uint8_t i)
         {
             if (len < (1 + addrByteCount() + i)) {
@@ -304,39 +494,39 @@ class iolinker {
             }
             return buf[1 + addrByteCount() + i];
         }
+        
+        /**
+         * @brief Return a word argument from string buffer
+         * @param buf String buffer containing one entire message
+         * @param len String length
+         * @param i Argument index
+         * @return The argument byte
+         */
+        inline uint8_t argWord(uint8_t *buf, uint8_t len, uint8_t i)
+        {
+            if (len < (1 + addrByteCount() + i + 1)) {
+                return 0;
+            }
+            return (argByte(buf, len, i) << 7 || argByte(buf, len, i + 1));
+        }
+        
+        /**
+         * @brief Return the CRC byte from string buffer
+         * @param buf String buffer containing one entire message
+         * @param len String length
+         * @return The CRC byte
+         */
         inline uint8_t crcByte(uint8_t *buf, uint8_t len)
         {
             if (len < 2) {
                 return 0;
             }
-            return buf[len - 2];
+            return buf[len - 1];
         }
 
-        inline bool cmdBitOn(uint8_t b)
-        {
-            return ((b & BITMASK_CMD_BIT) != 0);
-        }
-        inline bool rwBitOn(uint8_t b)
-        {
-            return ((b & BITMASK_RW_BIT) != 0);
-        }
-        inline bool bufBitOn(uint8_t b)
-        {
-            return ((b & BITMASK_BUF_BIT) != 0);
-        }
-        inline bool crcBitOn(uint8_t b)
-        {
-            return ((b & BITMASK_CRC_BIT) != 0);
-        }
-        inline uint8_t commandCode(uint8_t b)
-        {
-            return (b & BITMASK_CMD);
-        }
-        inline uint8_t argData(uint8_t b)
-        {
-            return (b & BITMASK_DATA);
-        }
-
+        /**
+         * @brief 
+         */
         typedef enum cmd_t {
             CMD_VER = 0x01,
             CMD_TYP = 0x02 | BITMASK_RW_BIT,
@@ -350,10 +540,19 @@ class iolinker {
             CMD_RST = 0x0f | BITMASK_RW_BIT,
         } cmd_t;
 
+        /**
+         * @brief 
+         * @return 
+         */
         inline uint16_t pin_addr(uint16_t pin)
         {
             return (pin & BITMASK_PIN_ADDR);
         }
+
+        /**
+         * @brief 
+         * @return 
+         */
         inline uint8_t pin_distance(uint16_t pin1, uint16_t pin2)
         {
             pin1 = pin_addr(pin1);
@@ -364,14 +563,27 @@ class iolinker {
             return pin2 - pin1;
         }
         
-        bool readReply(uint8_t *s = NULL, uint8_t len = 0); /* Read reply of the given max length into the buffer, verify CRC if applicable, and save status code for the statusCode() function. Return false and set status code to ERROR_CRC on CRC failure or no received reply, otherwise return true. */
+        /**
+         * @brief Read reply of the given max length into the buffer,
+         *      verify CRC if applicable, and save status code for the
+         *      statusCode() function.
+         * @return Returns false and set status code to ERROR_CRC on CRC
+         *      failure or no received reply, otherwise returns true.
+         */
+        bool readReply(uint8_t *s = NULL, uint8_t len = 0);
 
-        void writeCmd(cmd_t cmd); /* Reset CRC and write out command +
+        /* Reset CRC and write out command +
                                      address byte, if applicable */
-        void writeMsg(uint8_t *s, uint8_t len); /* Write out additional message
-                                                part */
+        void writeCmd(cmd_t cmd);
         
-        /* Write out CRC if applicable */
+        /**
+         * @brief Write out additional message part
+         */
+        void writeMsg(uint8_t *s, uint8_t len);
+        
+        /**
+         * @brief Write out CRC if applicable
+         */
         inline bool writeCRC(void)
         {
             writeMsg(&__crc, 1);

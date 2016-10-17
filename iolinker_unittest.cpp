@@ -63,7 +63,8 @@ int main(void)
     assert(iolinker.bufBitOn(0) == false);
     assert(iolinker.crcBitOn(iolinker::BITMASK_CRC_BIT) == true);
     assert(iolinker.crcBitOn(0) == false);
-    assert(iolinker.commandCode(0x55) == 0x05);
+    assert(iolinker.commandCode(iolinker::CMD_VER) == iolinker::CMD_VER);
+    assert(iolinker.commandCode(iolinker::CMD_TYP) == iolinker::CMD_TYP);
     assert(iolinker.argData(0xff) == 0x7f);
 
     //assert(iolinker.send(buf, sizeof(buf) == false));
@@ -76,5 +77,7 @@ int main(void)
     assert(iolinker.chainLength() == 0);
     assert(iolinker.firstAddress() == 0);
     //assert(iolinker.send(0, 0) == false);
+
+    fprintf(stderr, "%d tests failed.\n", failed);
 }
 

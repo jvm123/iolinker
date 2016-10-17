@@ -3,7 +3,12 @@
  * MIT License
  * --
  * http://jinvent.de/iolinker
- * iolinker class for Arduino, Raspberry Pi and PC unit tests
+ */
+
+/**
+ * @file iolinker.cpp
+ * @author Julian von Mendel
+ * @brief iolinker class for Arduino, Raspberry Pi and PC unit tests
  **/
 
 #include "iolinker.h"
@@ -51,7 +56,9 @@ uint8_t iolinker::version(void)
     uint8_t buf;
     writeCmd(CMD_VER);
     writeCRC();
-    readReply(&buf, 0);
+    if (!readReply(&buf, 0)) {
+        return 0;
+    }
     return buf;
 }
 
@@ -184,7 +191,7 @@ uint16_t iolinker::firstAddress(void)
         targetAddress(++addr);
     } while (!available() && addr < TARGET_MAX);
 
-    return ((addr > TARGET_MAX) ? 0 : addr);
+    return ((addr >= TARGET_MAX) ? 0 : addr);
 }
 
 uint16_t iolinker::chainLength(uint8_t start)
@@ -276,17 +283,17 @@ void iolinker::writeCmd(cmd_t cmd)
     cmdbyte |= cmd;
 
 #ifdef WIRINGPI
-    // Nothing to do on Raspberry
+    /* Nothing to do on Raspberry */
 #elif defined(ARDUINO)
     if (interface_mode == SPI) {
         setSS();
     } else if (interface_mode == I2C) {
         Wire.beginTransmission(target_addr);
     } else if (interface_mode == UART) {
-        // Nothing to do for UART
+        /* Nothing to do for UART */
     }
 #else
-    // Nothing to do on PC
+    /* Nothing to do on PC */
 #endif
 
     writeMsg(&cmdbyte, 1);
