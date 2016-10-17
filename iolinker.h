@@ -26,6 +26,7 @@
 #include "Arduino.h"
 #elif !defined(__PC)
 #define __PC
+#include "wiringSerial.h"
 #endif
 
 #define __IOLINKER_DEBUG (1) /*!< Activate debugging output */
@@ -34,13 +35,17 @@
 class iolinker {
     public:
 #define __IOLINKER_BAUDRATE (115200)
+#define __IOLINKER_BAUDRATE_WIRINGPI (B115200)
 
-#ifdef WIRINGPI
+#if defined(WIRINGPI) || defined(__PC)
         /**
          * @brief Setup serial interface
          * @param Device file
          */
-        void beginSerial(unsigned char *dev);
+        void beginSerial(const char *dev);
+#endif
+
+#ifdef WIRINGPI
 #define __IOLINKER_SPI_CLK (32000000UL)
         
         /**
@@ -65,6 +70,7 @@ class iolinker {
             interface_stream = &stream;
         }
 
+#define __IOlINKER_SPI_SETTINGS SPISettings(14000000, MSBFIRST, SPI_MODE0)
 #define __IOLINKER_SPI_CS (10)        
         /**
          * @brief Setup SPI master
@@ -87,12 +93,6 @@ class iolinker {
             Wire.begin();
         }
 
-#else
-        /**
-         * @brief Setup serial interface
-         * @param Device file
-         */
-        void beginSerial(unsigned char *dev);
 #endif
 
         /**
@@ -432,7 +432,7 @@ class iolinker {
                                                     chip */
         uint8_t __crc = 0; /*!< CRC of the message currently being
                                 constructed */
-        uint8_t target_addr = TARGET_ALL; /*!< Current target address */
+        uint8_t target_addr = TARGET_FIRST; /*!< Current target address */
         uint8_t cmdbyte = BITMASK_CMD_BIT; /*!< Current command byte */
         
         /**

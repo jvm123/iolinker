@@ -19,13 +19,16 @@
 #endif
 
 
-#ifdef WIRINGPI
-void iolinker::beginSerial(unsigned char *dev)
+#if defined(WIRINGPI) || defined(__PC)
+void iolinker::beginSerial(const char *dev)
 {
     interface_mode = UART;
+    //interface_fd = serialOpen(dev, __IOLINKER_BAUDRATE_WIRINGPI);
     interface_fd = serialOpen(dev, __IOLINKER_BAUDRATE);
 }
+#endif
 
+#ifdef WIRINGPI
 void iolinker::beginSPI(uint8_t channel)
 {
     interface_mode = SPI;
@@ -39,13 +42,6 @@ void iolinker::beginI2C(void)
 }
 
 #elif ARDUINO
-#else
-void iolinker::beginSerial(unsigned char *dev)
-{
-    interface_mode = UART;
-    // TODO: PC solution
-    //interface_fd = serialOpen(dev, __IOLINKER_BAUDRATE);
-}
 #endif
 
 
@@ -53,10 +49,10 @@ void iolinker::beginSerial(unsigned char *dev)
         
 uint16_t iolinker::version(void)
 {
-    uint8_t *buf;
+    uint8_t buf[2];
     writeCmd(CMD_VER);
     writeCRC();
-    if (!readReply(buf, 2)) {
+    if (!readReply(buf, sizeof(buf))) {
         return 0;
     }
     return (buf[0] << 8 | buf[1]);
@@ -75,12 +71,20 @@ void iolinker::setPinType(pin_types type, uint16_t pin_start, uint16_t pin_end)
 
 bool iolinker::readInput(uint16_t pin)
 {
-
+    uint8_t tx[] = { argData(pin >> 7), argData(pin), 0, 0 };
+    uint8_t buf;
+    writeCmd(CMD_REA);
+    writeMsg(tx, sizeof(tx));
+    writeCRC();
+    if (!readReply(&buf, 1)) {
+        return 0;
+    }
+    return ((buf >> 7) == 1);
 }
 
 void iolinker::readInput(uint8_t *s, uint8_t len, uint16_t pin_start, uint16_t pin_end)
 {
-
+    // TODO
 }
 
 void iolinker::setOutput(bool state, uint16_t pin_start, uint16_t pin_end)
@@ -208,6 +212,8 @@ uint16_t iolinker::chainLength(uint8_t start)
 
 bool iolinker::readReply(uint8_t *s, uint8_t len)
 {
+    uint8_t i = 0;
+
 #ifdef WIRINGPI
     if (interface_fd == -1) {
         status = ERROR_INTERFACE;
@@ -217,26 +223,48 @@ bool iolinker::readReply(uint8_t *s, uint8_t len)
     read(interface_fd, s, len);
 #elif defined(ARDUINO)
     if (interface_mode == I2C) {
-        // TODO
-        Wire.endTransmission();
+        Wire.requestFrom(target_addr, len);
+        for (; i < len && Wire.available(); i++) {
+            s[i] = (uint8_t)Wire.read();
+        }
     } else if (interface_mode == SPI) {
+#if 0 // Delay?
         resetSS();
-        // TODO
+        delay(1);
+        setSS();
+#endif
+
+        SPI.beginTransaction(__IOlINKER_SPI_SETTINGS); 
+        SPI.transfer(s, len);
+        SPI.endTransaction();
+        resetSS();
     } else if (interface_mode == UART) {
-        for (uint8_t i = 0; i < len; i++) {
+        for (; i < len; i++) {
             s[i] = interface_stream->read();
         }
     }
     
 #elif defined(__PC)
     interface_buf = interface_buf_reset;
-    len = interface_testfunc(s, len);
+    i = interface_testfunc(s, len);
     /* Reply is in '*s', and is of length 'size' */
 #endif
 
+    /* Verify length of return message */
+    if (i < len) {
+        status = ERROR_NOREPLY;
+        return false;
+    }
+
+    /* Verify CRC */
     // TODO
-    status = ERROR_NOREPLY;
-    return false;
+    if (0) {
+        status = ERROR_CRC;
+        return false;
+    }
+
+    status = STATUS_SUCCESS;
+    return true;
 }
 
 void iolinker::writeMsg(uint8_t *s, uint8_t len)
@@ -287,13 +315,14 @@ void iolinker::writeCmd(cmd_t cmd)
 #elif defined(ARDUINO)
     if (interface_mode == SPI) {
         setSS();
+        SPI.beginTransaction(__IOlINKER_SPI_SETTINGS); 
     } else if (interface_mode == I2C) {
         Wire.beginTransmission(target_addr);
     } else if (interface_mode == UART) {
-        /* Nothing to do for UART */
+        /* Nothing to prepare for UART transmission */
     }
 #else
-    /* Nothing to do on PC */
+    /* Nothing to prepare for PC UART transmission */
 #endif
 
     writeMsg(&cmdbyte, 1);

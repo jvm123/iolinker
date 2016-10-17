@@ -6,7 +6,7 @@ LDFLAGS=-g #$(shell root-config --ldflags) -lboost_unit_test_framework
 LDLIBS=#$(shell root-config --libs)
 
 SRCS=iolinker.cpp
-SRCS_unittest=$(SRCS) iolinker_unittest.cpp
+SRCS_unittest=$(SRCS) wiringSerial.cpp iolinker_unittest.cpp
 SRCS_pi=$(SRCS) wiringSerial.cpp wiringPiSPI.cpp wiringPiI2C.cpp raspberry_test.cpp
 
 OBJS=$(subst .cpp,.o,$(SRCS))
