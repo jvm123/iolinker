@@ -3,7 +3,12 @@
  * MIT License
  * --
  * http://jinvent.de/iolinker
- * Quick test program for iolinker class
+ **/
+
+/**
+ * @file iolinker_unittest.cpp
+ * @author Julian von Mendel
+ * @brief Quick test program for iolinker class
  **/
 
 #include <stdint.h>

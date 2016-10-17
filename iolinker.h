@@ -525,7 +525,7 @@ class iolinker {
          */
         inline uint8_t cmdByte(uint8_t *buf, uint8_t len)
         {
-            if (len < 1 || ((buf[0] && BITMASK_CMD_BIT) != BITMASK_CMD_BIT)) {
+            if (len < 1 || ((buf[0] & BITMASK_CMD_BIT) != BITMASK_CMD_BIT)) {
                 return 0;
             }
             return buf[0];

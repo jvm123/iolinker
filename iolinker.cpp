@@ -82,16 +82,46 @@ bool iolinker::readInput(uint16_t pin)
     return ((buf >> 7) == 1);
 }
 
-void iolinker::readInput(uint8_t *s, uint8_t len, uint16_t pin_start, uint16_t pin_end)
+void iolinker::readInput(uint8_t *s, uint8_t len, uint16_t pin_start,
+        uint16_t pin_end)
 {
-    // TODO
+    uint8_t bytecount = (uint8_t)(
+            (pin_distance(pin_start, pin_end) + 0.5) / 7);
+    if (bytecount < len) {
+        len = bytecount;
+    }
+
+    uint8_t tx[] = { argData(pin_start >> 7), argData(pin_start),
+            argData(pin_end >> 7), argData(pin_end) };
+    writeCmd(CMD_REA);
+    writeMsg(tx, sizeof(tx));
+    writeCRC();
+
+    if (!readReply(s, len)) {
+        return;
+    }
+
+    uint8_t offset = 1, j = 0, lastbyte = 0;
+
+    for (uint8_t i = 0; i < len; i++) {
+        uint8_t byte = (s[j] << offset);
+        byte |= (s[j + 1] >> (7 - offset));
+
+        s[j] = byte;
+
+        if (++offset >= 8) {
+            offset = 1;
+        } else {
+            j++;
+        }
+    }
 }
 
 void iolinker::setOutput(bool state, uint16_t pin_start, uint16_t pin_end)
 {
-    uint8_t bytecount = max(1,
-            (uint8_t)((pin_distance(pin_start, pin_end) + 0.5) / 7));
-    uint8_t buf[4] = { argData(pin_start >> 7), argData(pin_start),
+    uint8_t bytecount = (uint8_t)(
+            (pin_distance(pin_start, pin_end) + 0.5) / 7);
+    uint8_t buf[] = { argData(pin_start >> 7), argData(pin_start),
             argData(pin_end >> 7), argData(pin_end) };
     writeCmd(CMD_SET);
     writeMsg(buf, sizeof(buf));
@@ -105,7 +135,8 @@ void iolinker::setOutput(bool state, uint16_t pin_start, uint16_t pin_end)
     readReply();
 }
 
-void iolinker::setOutput(uint8_t *s, uint8_t len, uint16_t pin_start, uint16_t pin_end)
+void iolinker::setOutput(uint8_t *s, uint8_t len, uint16_t pin_start,
+        uint16_t pin_end)
 {
     uint8_t bytecount = max(1,
             (uint8_t)((pin_distance(pin_start, pin_end) + 0.5) / 7));
@@ -114,18 +145,22 @@ void iolinker::setOutput(uint8_t *s, uint8_t len, uint16_t pin_start, uint16_t p
     writeCmd(CMD_SET);
     writeMsg(buf, sizeof(buf));
     
-    for (uint8_t i = 0; i < len; i++) {
-        // TODO
-        uint8_t byte = s[i] >> (i + 1);
-/*        left = s[i] & (0xff >> (8 - i - 1));
-        i++;
-        byte = (left << 6) | (s[i] >> (i + 1));
-        left = s[i] & (0xff >> (8 - i - 1));
-        i++;
-        byte = (left << 5) | (s[i] >> (i + 1));
-        left = s[i] & (0xff >> (8 - i - 1));*/
+    uint8_t offset = 1, j = 0;
+
+    for (uint8_t i = 0; i < bytecount; i++) {
+        uint8_t byte = (s[j] >> offset);
+        
+        if (j > 0) {
+            byte |= (s[j-1] << (7 - offset));
+        }
 
         writeMsg(&byte, 1);
+
+        if (++offset >= 8) {
+            offset = 1;
+        } else {
+            j++;
+        }
     }
 
     writeCRC();
