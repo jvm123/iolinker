@@ -266,6 +266,26 @@ uint16_t iolinker::chainLength(uint8_t start)
     return len - 1;
 }
 
+
+uint8_t iolinker::crc7(uint8_t *s, uint8_t len, uint8_t crc)
+{ /* Source: http://www.microchip.com/forums/FindPost/100156 */
+
+    for (uint8_t i = 0; i < len; i++, s++) {
+        uint8_t c = *s;
+
+        for (uint8_t ibit = 0; ibit < 8; ibit++) {
+            crc = crc << 1;
+            if ((c ^ crc) & 0x80) {
+                crc = crc ^ 0x09;
+            }
+            c = c << 1;
+        }
+
+        crc = crc & 0x7F;
+    }
+    return crc;
+}
+
 bool iolinker::readReply(uint8_t *s, uint8_t len)
 {
     uint8_t i = 0;
@@ -318,10 +338,13 @@ bool iolinker::readReply(uint8_t *s, uint8_t len)
     }
 
     /* Verify CRC */
-    // TODO
-    if (0) {
-        status = ERROR_CRC;
-        return false;
+    if (crcBitOn(cmdByte(s, len))) {
+        s[i - 1] <<= 1;
+        
+        if (crc7(s, i) != 0) {
+            status = ERROR_CRC;
+            return false;
+        }
     }
 
     status = (iolinker::status_code)s[1 + addrByteCount()];
@@ -359,6 +382,8 @@ void iolinker::writeMsg(uint8_t *s, uint8_t len)
             interface_buf += len;
         }
     }
+
+    __crc = crc7(s, len, __crc);
 }
 
 void iolinker::writeCmd(cmd_t cmd)

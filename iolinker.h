@@ -16,6 +16,7 @@
 
 #include <stdlib.h>
 #include <stdint.h>
+#include <stdio.h>
 #define max(a,b) (a>b?a:b)
 
 #ifdef WIRINGPI
@@ -400,6 +401,10 @@ class iolinker {
          */
         uint16_t chainLength(uint8_t start = 1);
 
+#define IOLINKER_CRCPOLY (0x89)
+        uint8_t crc7(uint8_t *s, uint8_t len, uint8_t crc = 0);
+
+
 #if defined(ARDUINO) || defined(WIRINGPI) /* Avoid private methods in PC
                                              unit test */
     private:
@@ -688,6 +693,7 @@ class iolinker {
         inline bool writeCRC(void)
         {
             if (crcBitOn(cmdbyte)) {
+                //printf("CRC 0x%x\n", __crc);
                 writeMsg(&__crc, 1);
             }
         }

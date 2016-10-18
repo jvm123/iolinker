@@ -82,7 +82,12 @@ void test_crc(void)
     unsigned char 
          msg1[] = { 0xD1, iolinker::TARGET_FIRST, 0x05 },
          msg2[] = { 0xD1, iolinker::TARGET_FIRST, iolinker::STATUS_SUCCESS, 0x34, 0x02, 0x6e },
-         msg3[] = { 0xD1, iolinker::TARGET_FIRST, iolinker::STATUS_SUCCESS, 0x34, 0x02, 0x00 };
+         msg3[] = { 0xD1, iolinker::TARGET_FIRST, iolinker::STATUS_SUCCESS, 0x12, 0x02, 0x6e };
+
+    assert(iolinker.crc7(msg1, sizeof(msg1) - 1) == msg1[sizeof(msg1) - 1]);
+    assert(iolinker.crc7(msg2, sizeof(msg2) - 1) == msg2[sizeof(msg2) - 1]);
+    assert(iolinker.crc7(msg2 + 1, sizeof(msg2) - 2, iolinker.crc7(msg2, 1))
+            == msg2[sizeof(msg2) - 1]);
 
     iolinker.beginTest((iolinker::testfunc_t)iolinker_sim,
             (uint8_t *)buf0, sizeof(buf0));
@@ -97,15 +102,15 @@ void test_crc(void)
     strncpy((char *)buf_fakereply, (const char *)msg2, fakereply_len);
 
     sim_success = 0;
+    iolinker.version();
     assert(sim_success == 1);
-    iolinker.reset();
     assert(iolinker.statusCode() == iolinker::STATUS_SUCCESS);
     
     fakereply_len = sizeof(msg3);
     strncpy((char *)buf_fakereply, (const char *)msg3, fakereply_len);
 
     sim_success = 0;
-    iolinker.reset();
+    iolinker.version();
     assert(sim_success == 1);
     assert(iolinker.statusCode() == iolinker::ERROR_CRC);
 }
