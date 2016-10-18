@@ -1,8 +1,8 @@
 CC=gcc
 CXX=g++
 RM=rm -f
-CPPFLAGS=-std=gnu++11 -g # $(shell root-config --cflags)
-LDFLAGS=-g #$(shell root-config --ldflags) -lboost_unit_test_framework
+CPPFLAGS=-std=gnu++11 -g # $(shell root-config --cflags) -lm
+LDFLAGS=-g #$(shell root-config --ldflags) -lboost_unit_test_framework -lm
 LDLIBS=#$(shell root-config --libs)
 
 SRCS=iolinker.cpp

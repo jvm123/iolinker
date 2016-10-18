@@ -49,44 +49,49 @@ void iolinker::beginI2C(void)
         
 uint16_t iolinker::version(void)
 {
-    uint8_t buf[2];
+    uint8_t buf[2 + REPLY_MAXMETA_BYTECOUNT];
     writeCmd(CMD_VER);
     writeCRC();
-    if (!readReply(buf, sizeof(buf))) {
+    if (!readReply(buf, 2 + optionalMetaByteCount() + REPLY_META_BYTECOUNT)) {
         return 0;
     }
-    return (buf[0] << 8 | buf[1]);
+    return (argByte(buf, sizeof(buf), 1) << 8 | argByte(buf, sizeof(buf), 2));
 }
 
 void iolinker::setPinType(pin_types type, uint16_t pin_start, uint16_t pin_end)
 {
+    uint8_t buf_reply[REPLY_MAXMETA_BYTECOUNT];
     uint8_t buf[] = { argData(pin_start >> 7), argData(pin_start),
             argData(pin_end >> 7), argData(pin_end),
             argData(type) };
     writeCmd(CMD_TYP);
     writeMsg(buf, sizeof(buf));
     writeCRC();
-    readReply();
+    readReply(buf_reply, optionalMetaByteCount() + REPLY_META_BYTECOUNT);
 }
 
 bool iolinker::readInput(uint16_t pin)
 {
     uint8_t tx[] = { argData(pin >> 7), argData(pin), 0, 0 };
-    uint8_t buf;
+    uint8_t buf[1 + REPLY_MAXMETA_BYTECOUNT];
     writeCmd(CMD_REA);
     writeMsg(tx, sizeof(tx));
     writeCRC();
-    if (!readReply(&buf, 1)) {
+    if (!readReply(buf, 1 + optionalMetaByteCount() + REPLY_META_BYTECOUNT)) {
         return 0;
     }
-    return ((buf >> 7) == 1);
+    return ((argByte(buf, sizeof(buf), 1) >> 6) == 1);
 }
 
 void iolinker::readInput(uint8_t *s, uint8_t len, uint16_t pin_start,
         uint16_t pin_end)
 {
+    if (pin_end < pin_start) {
+        pin_end = pin_start;
+    }
+
     uint8_t bytecount = (uint8_t)(
-            (pin_distance(pin_start, pin_end) + 0.5) / 7);
+            (pin_distance(pin_start, pin_end) + 1.5) / 7);
     if (bytecount < len) {
         len = bytecount;
     }
@@ -97,15 +102,15 @@ void iolinker::readInput(uint8_t *s, uint8_t len, uint16_t pin_start,
     writeMsg(tx, sizeof(tx));
     writeCRC();
 
-    if (!readReply(s, len)) {
+    if (!readReply(s, len + optionalMetaByteCount() + REPLY_META_BYTECOUNT)) {
         return;
     }
 
     uint8_t offset = 1, j = 0, lastbyte = 0;
 
     for (uint8_t i = 0; i < len; i++) {
-        uint8_t byte = (s[j] << offset);
-        byte |= (s[j + 1] >> (7 - offset));
+        uint8_t byte = (argByte(s, sizeof(s), 1 + j) << offset);
+        byte |= (argByte(s, sizeof(s), 2 + j) >> (7 - offset));
 
         s[j] = byte;
 
@@ -119,8 +124,13 @@ void iolinker::readInput(uint8_t *s, uint8_t len, uint16_t pin_start,
 
 void iolinker::setOutput(bool state, uint16_t pin_start, uint16_t pin_end)
 {
+    if (pin_end < pin_start) {
+        pin_end = pin_start;
+    }
+
+    uint8_t buf_reply[REPLY_MAXMETA_BYTECOUNT];
     uint8_t bytecount = (uint8_t)(
-            (pin_distance(pin_start, pin_end) + 0.5) / 7);
+            (pin_distance(pin_start, pin_end) + 1.5) / 7);
     uint8_t buf[] = { argData(pin_start >> 7), argData(pin_start),
             argData(pin_end >> 7), argData(pin_end) };
     writeCmd(CMD_SET);
@@ -132,14 +142,19 @@ void iolinker::setOutput(bool state, uint16_t pin_start, uint16_t pin_end)
     }
     
     writeCRC();
-    readReply();
+    readReply(buf_reply, optionalMetaByteCount() + REPLY_META_BYTECOUNT);
 }
 
 void iolinker::setOutput(uint8_t *s, uint8_t len, uint16_t pin_start,
         uint16_t pin_end)
 {
+    if (pin_end < pin_start) {
+        pin_end = pin_start;
+    }
+
+    uint8_t buf_reply[REPLY_MAXMETA_BYTECOUNT];
     uint8_t bytecount = max(1,
-            (uint8_t)((pin_distance(pin_start, pin_end) + 0.5) / 7));
+            (uint8_t)((pin_distance(pin_start, pin_end) + 1.5) / 7));
     uint8_t buf[4] = { argData(pin_start >> 7), argData(pin_start),
             argData(pin_end >> 7), argData(pin_end) };
     writeCmd(CMD_SET);
@@ -164,59 +179,65 @@ void iolinker::setOutput(uint8_t *s, uint8_t len, uint16_t pin_start,
     }
 
     writeCRC();
-    readReply();
+    readReply(buf_reply, optionalMetaByteCount() + REPLY_META_BYTECOUNT);
 }
 
 void iolinker::syncOutputsToBuffer(void)
 {
+    uint8_t buf[REPLY_MAXMETA_BYTECOUNT];
     writeCmd(CMD_SYN);
     writeCRC();
-    readReply();
+    readReply(buf, optionalMetaByteCount() + REPLY_META_BYTECOUNT);
 }
 
 void iolinker::syncBufferToOutputs(void)
 {
+    uint8_t buf[REPLY_MAXMETA_BYTECOUNT];
     writeCmd(CMD_TRG);
     writeCRC();
-    readReply();
+    readReply(buf, optionalMetaByteCount() + REPLY_META_BYTECOUNT);
 }
 
 void iolinker::link(uint16_t target_pin, uint16_t pin_start, uint16_t pin_end)
 {
+    uint8_t buf_reply[REPLY_MAXMETA_BYTECOUNT];
     uint8_t buf[] = { argData(pin_start >> 7), argData(pin_start),
             argData(pin_end >> 7), argData(pin_end),
             argData(target_pin >> 7), argData(target_pin), };
-    writeCmd(CMD_PWM);
+    writeCmd(CMD_LNK);
     writeMsg(buf, sizeof(buf));
     writeCRC();
-    readReply();
+    readReply(buf_reply, optionalMetaByteCount() + REPLY_META_BYTECOUNT);
 }
 
 void iolinker::pwm(uint8_t pwm_r, uint16_t pin_start, uint16_t pin_end)
 {
+    uint8_t buf_reply[REPLY_MAXMETA_BYTECOUNT];
     uint8_t buf[] = { argData(pin_start >> 7), argData(pin_start),
             argData(pin_end >> 7), argData(pin_end),
             argData(pwm_r), };
     writeCmd(CMD_PWM);
     writeMsg(buf, sizeof(buf));
     writeCRC();
-    readReply();
+    readReply(buf_reply, optionalMetaByteCount() + REPLY_META_BYTECOUNT);
 }
 
 void iolinker::pwmPeriod(uint8_t per)
 {
+    uint8_t buf[REPLY_MAXMETA_BYTECOUNT];
     per = argData(per);
     writeCmd(CMD_PER);
     writeMsg(&per, 1);
     writeCRC();
-    readReply();
+    readReply(buf, optionalMetaByteCount() + REPLY_META_BYTECOUNT);
 }
 
 void iolinker::reset(void)
 {
+    uint8_t buf[REPLY_MAXMETA_BYTECOUNT];
     writeCmd(CMD_RST);
     writeCRC();
-    readReply();
+    readReply(buf, optionalMetaByteCount() + REPLY_META_BYTECOUNT);
 }
 
 
@@ -249,13 +270,16 @@ bool iolinker::readReply(uint8_t *s, uint8_t len)
 {
     uint8_t i = 0;
 
-#ifdef WIRINGPI
-    if (interface_fd == -1) {
-        status = ERROR_INTERFACE;
-        return false;
+#if defined(WIRINGPI) || defined(__PC)
+    if (interface_mode == I2C || interface_mode == SPI ||
+            interface_mode == UART) {
+        if (interface_fd == -1) {
+            status = ERROR_INTERFACE;
+            return false;
+        }
+        
+        read(interface_fd, s, len);
     }
-    
-    read(interface_fd, s, len);
 #elif defined(ARDUINO)
     if (interface_mode == I2C) {
         Wire.requestFrom(target_addr, len);
@@ -278,15 +302,17 @@ bool iolinker::readReply(uint8_t *s, uint8_t len)
             s[i] = interface_stream->read();
         }
     }
-    
-#elif defined(__PC)
-    interface_buf = interface_buf_reset;
-    i = interface_testfunc(s, len);
-    /* Reply is in '*s', and is of length 'size' */
 #endif
+    else if (interface_mode == INTERFACE_CALLBACK) {
+        i = interface_testfunc(interface_buf_reset,
+                interface_buf - interface_buf_reset);
+        /* Reply is in '*s', and is of length 'size' */
+        interface_buf = interface_buf_reset;
+        strncpy((char *)s, (const char *)interface_buf, i);
+    }
 
     /* Verify length of return message */
-    if (i < len) {
+    if (i < len || i < (2 + optionalMetaByteCount())) {
         status = ERROR_NOREPLY;
         return false;
     }
@@ -298,7 +324,7 @@ bool iolinker::readReply(uint8_t *s, uint8_t len)
         return false;
     }
 
-    status = STATUS_SUCCESS;
+    status = (iolinker::status_code)s[1 + addrByteCount()];
     return true;
 }
 
@@ -327,8 +353,8 @@ void iolinker::writeMsg(uint8_t *s, uint8_t len)
     }
 #endif
 
-    else if (interface_mode == INTERFACE_UNCLEAR) {
-        if ((interface_buf+len) <= interface_buf_end) {
+    else if (interface_mode == INTERFACE_CALLBACK) {
+        if ((interface_buf + len) <= interface_buf_end) {
             strncpy((char *)interface_buf, (const char *)s, (size_t)len);
             interface_buf += len;
         }
@@ -361,5 +387,6 @@ void iolinker::writeCmd(cmd_t cmd)
 #endif
 
     writeMsg(&cmdbyte, 1);
+    writeMsg(&target_addr, 1);
 }
 

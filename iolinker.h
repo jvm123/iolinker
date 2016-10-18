@@ -110,7 +110,7 @@ class iolinker {
          */
         inline void beginTest(testfunc_t testfunc, uint8_t *buf, uint8_t size)
         {
-            interface_mode = INTERFACE_UNCLEAR;
+            interface_mode = INTERFACE_CALLBACK;
             interface_testfunc = testfunc;
             interface_buf = buf;
             interface_buf_reset = buf;
@@ -240,7 +240,7 @@ class iolinker {
          */
         inline bool isProVersion(uint16_t version)
         {
-            return ((version & (1 << 15)) == 1);
+            return ((version >> 14) == 1);
         }
 
         /**
@@ -276,6 +276,8 @@ class iolinker {
          *      buffer
          * @param Buffer to read pin states into. 8 pin states are encoded
          *      in one byte, the first one in the MSB of the first byte.
+         *      Please guarantee that the buffer is REPLY_MAXMETA_BYTECOUNT
+         *      bytes larger than necessary just to hold the read pin states.
          * @param len Buffer size
          * @param pin_start First pin to read
          * @param pin_end Last pin to read, or 0 if only one is to be read
@@ -425,6 +427,10 @@ class iolinker {
             BITMASK_PIN_ADDR = 0x7ff, /*!< I(nvert), V(irtual) and 10 pin
                                            number bits make up the 12 bit pin
                                            address */
+            REPLY_MAXMETA_BYTECOUNT = 4, /* Meta byte count in replies,
+                                            address byte included */
+            REPLY_META_BYTECOUNT = 2, /* Meta byte count in replies that is
+                                         always there */
         };
 
         status_code status = STATUS_UNDEFINED; /*!< Return status of the last
@@ -439,11 +445,12 @@ class iolinker {
          * @brief Communication interface identifier
          */
         enum interface_mode {
-            UART = 0,
+            INTERFACE_UNSET = 0,
+            UART,
             SPI,
             I2C,
-            INTERFACE_UNCLEAR,
-        } interface_mode;
+            INTERFACE_CALLBACK,
+        } interface_mode = INTERFACE_UNSET;
         
 #ifndef ARDUINO
         testfunc_t interface_testfunc; /*!< testfunc interface function
@@ -541,6 +548,17 @@ class iolinker {
         {
             return ((interface_mode == I2C) ? 0 : 1);
         }
+            
+        /**
+         * @brief Determine the number of optional meta bytes for the current
+         *      communication settings
+         * @return Number of optional meta bytes bytes that are required with
+         *      current configuration
+         */
+        inline uint8_t optionalMetaByteCount(void)
+        {
+            return addrByteCount() + ((crcBitOn(cmdbyte)) ? 1 : 0);
+        }
         
         /**
          * @brief Return the address byte in the string buffer
@@ -610,16 +628,16 @@ class iolinker {
          * @brief Command codes
          */
         typedef enum cmd_t {
-            CMD_VER = 0x01,
-            CMD_TYP = 0x02 | BITMASK_RW_BIT,
-            CMD_REA = 0x07,
-            CMD_SET = 0x03 | BITMASK_RW_BIT,
-            CMD_SYN = 0x08 | BITMASK_RW_BIT,
-            CMD_TRG = 0x09 | BITMASK_RW_BIT,
-            CMD_LNK = 0x04 | BITMASK_RW_BIT,
-            CMD_PWM = 0x05 | BITMASK_RW_BIT,
-            CMD_PER = 0x06 | BITMASK_RW_BIT,
-            CMD_RST = 0x0f | BITMASK_RW_BIT,
+            CMD_VER = 0x01 | BITMASK_RW_BIT,
+            CMD_TYP = 0x02,
+            CMD_REA = 0x07 | BITMASK_RW_BIT,
+            CMD_SET = 0x03,
+            CMD_SYN = 0x08,
+            CMD_TRG = 0x09,
+            CMD_LNK = 0x04,
+            CMD_PWM = 0x05,
+            CMD_PER = 0x06,
+            CMD_RST = 0x0f,
         } cmd_t;
 
         /**
@@ -647,12 +665,13 @@ class iolinker {
          * @brief Read reply of the given max length into the buffer,
          *      verify CRC if applicable, and save status code for the
          *      statusCode() function.
-         * @param buf String buffer to write into
+         * @param buf String buffer to write into, with at least
+         *       optionalMetaByteCount() + REPLY_META_BYTECOUNT bytes
          * @param len String length
          * @return Returns false and set status code to ERROR_CRC on CRC
          *      failure or no received reply, otherwise returns true.
          */
-        bool readReply(uint8_t *buf = NULL, uint8_t len = 0);
+        bool readReply(uint8_t *buf, uint8_t len);
 
         /* Reset CRC and write out command +
                                      address byte, if applicable */
@@ -668,7 +687,9 @@ class iolinker {
          */
         inline bool writeCRC(void)
         {
-            writeMsg(&__crc, 1);
+            if (crcBitOn(cmdbyte)) {
+                writeMsg(&__crc, 1);
+            }
         }
 };
 

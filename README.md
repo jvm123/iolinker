@@ -10,7 +10,7 @@ Every iolinker chip functions as a dynamically configurable IO matrix. Its main 
 
 The iolinker library allows easy interfacing of the iolinker chips, on a PC, a Raspberry Pi or on an Arduino. It works with UART, SPI and I2C chips.
 
-## DEPENDENCIES
+## Dependencies
 
 * Raspberry
   * WiringPi (http://wiringpi.com/download-and-install/)
