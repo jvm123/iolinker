@@ -358,6 +358,11 @@ void iolinker::writeMsg(uint8_t *s, uint8_t len)
     if (interface_mode == I2C ||
             interface_mode == SPI ||
             interface_mode == UART) {
+        if (interface_fd == -1) {
+            status = ERROR_INTERFACE;
+            return;
+        }
+        
         writeMsg(interface_fd, s, len);
     }
 #elif defined(ARDUINO)
@@ -372,6 +377,11 @@ void iolinker::writeMsg(uint8_t *s, uint8_t len)
     }
 #else
     if (interface_mode == UART) {
+        if (interface_fd == -1) {
+            status = ERROR_INTERFACE;
+            return;
+        }
+        
         write(interface_fd, s, len);
     }
 #endif

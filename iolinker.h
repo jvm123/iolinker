@@ -432,10 +432,25 @@ class iolinker {
             BITMASK_PIN_ADDR = 0x7ff, /*!< I(nvert), V(irtual) and 10 pin
                                            number bits make up the 12 bit pin
                                            address */
-            REPLY_MAXMETA_BYTECOUNT = 4, /* Meta byte count in replies,
-                                            address byte included */
-            REPLY_META_BYTECOUNT = 2, /* Meta byte count in replies that is
-                                         always there */
+            REPLY_MAXMETA_BYTECOUNT = 4, /*!< Meta byte count in replies,
+                                              address byte included */
+            REPLY_META_BYTECOUNT = 2, /*!< Meta byte count in replies that
+                                           is always there */
+            BITMASK_PIN_ADDRESS_VIRT = (1 << 11), /*!< Virtual pin bit */
+            BITMASK_PIN_ADDRESS_INV = (1 << 10), /*!< Invert pin state
+                                                      bit */
+        };
+
+        enum virtual_pins {
+            VIRTUAL_CLK = (0x01 | BITMASK_PIN_ADDRESS_VIRT),
+            VIRTUAL_CLK2 = (0x02 | BITMASK_PIN_ADDRESS_VIRT),
+            VIRTUAL_CLK4 = (0x03 | BITMASK_PIN_ADDRESS_VIRT),
+            VIRTUAL_CLK8 = (0x04 | BITMASK_PIN_ADDRESS_VIRT),
+            VIRTUAL_CLK16 = (0x05 | BITMASK_PIN_ADDRESS_VIRT),
+            VIRTUAL_CLK32 = (0x06 | BITMASK_PIN_ADDRESS_VIRT),
+            VIRTUAL_CLK64 = (0x07 | BITMASK_PIN_ADDRESS_VIRT),
+            VIRTUAL_CLK128 = (0x08 | BITMASK_PIN_ADDRESS_VIRT),
+            VIRTUAL_CLK256 = (0x09 | BITMASK_PIN_ADDRESS_VIRT),
         };
 
         status_code status = STATUS_UNDEFINED; /*!< Return status of the last
@@ -628,6 +643,17 @@ class iolinker {
             }
             return buf[len - 1];
         }
+        
+        inline uint16_t virtual_pin(uint16_t pin_address)
+        {
+            return (pin_address | iolinker::BITMASK_PIN_ADDRESS_VIRT);
+        }
+
+        inline uint16_t invert(uint16_t pin_address)
+        {
+            return (pin_address | iolinker::BITMASK_PIN_ADDRESS_INV);
+        }
+
 
         /**
          * @brief Command codes
