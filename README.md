@@ -56,10 +56,10 @@ iolinker.beginI2C();
 
 You can connect up to 127 chips in parallel. Their addresses are set through their hardware slave address port (IN1 to IN7).
 
-When using multiple, address collision obviously has to be avoided. I suggest you start with address 1 *(iolinker::TARGET_FIRST)* and go up from there.
+When using multiple, address collision obviously has to be avoided. I suggest you start with address 1 and go up from there.
 
 ```c++
-iolinker.targetAddress(iolinker::TARGET_FIRST);
+iolinker.targetAddress(1);
 ```
 
 When using only one chip, you can cheat if you aren't sure about its slave address:
@@ -78,7 +78,7 @@ By default, all pins on the iolinker chip are Tristate (open collector) inputs. 
 ```c++
 iolinker.setPinType(iolinker::PULLDOWN, 1); // P1 is a pulldown input
 iolinker.setPinType(iolinker::PULLUP, 2); // P2 is a pullup input
-iolinker.setPinType(iolinker::INPUT, 3); // P2 is a tristate input
+iolinker.setPinType(iolinker::INPUT, 3); // P3 is a tristate input
 iolinker.setPinType(iolinker::OUTPUT, 4, 64); // P4 to P64 are outputs
 ```
 
@@ -155,9 +155,11 @@ iolinker.pwmPeriod(127); // Longest period
 If you are updating a lot of pins individually and want the effect to be simultaneous, the iolinker chips allow to buffer pin settings. For that purpose, you first use the SYN command with *iolinker.syncOutputsToBuffer()*, activate the buffer with *iolinker.buffer(true)*, then run your pin update commands, and then trigger the simultaneous pin update using the TRG command with *iolinker.syncBufferToOutputs()*.
 
 ```c++
+// Prepare buffered pin update
 iolinker.syncOutputsToBuffer();
 iolinker.buffer(true);
 
+// Your commands
 iolinker.pwm(13, 8); // P8 will be ~10.23% on
 iolinker.setOutput(true, 9); // P9 will be high
 iolinker.setOutput(false, 10); // P10 will be low
@@ -174,12 +176,14 @@ iolinker.syncBufferToOutputs(); // Simultaneous pin update!
 If it is vital for you that your changes are implemented correctly, you can activate CRC7 checksums and verify status codes of return messages. Checksums are activated and verified both ways.
 
 ```c++
+// Activate CRC for all future commands
 iolinker.crc(true);
 
 // ...your command for changing output states or reading input
 // states, as shown above, e.g.
 iolinker.setPinType(iolinker::PULLDOWN, 2); // P2 will be a pulldown input
 
+// Verify the status code of the last command
 select (iolinker.statusCode()) {
     case iolinker::STATUS_SUCCESS:
         Serial.println("Success! Congratulations.");
