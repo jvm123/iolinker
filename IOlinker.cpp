@@ -11,79 +11,84 @@
  * @brief iolinker class for Arduino, Raspberry Pi and PC unit tests
  **/
 
-#include "iolinker.h"
+#include "IOlinker.h"
 #include <string.h>
 
 #ifdef __PC
 #include <unistd.h>
+#elif defined(ARDUINO)
+#include <Stream.h>
+#include <SPI.h>
 #endif
 
-
 #if defined(WIRINGPI) || defined(__PC)
-void iolinker::beginSerial(const char *dev)
+void IOlinker::beginSerial(const char *dev)
 {
-    interface_mode = UART;
+    interface_mode = IOLINKER_UART;
     //interface_fd = serialOpen(dev, __IOLINKER_BAUDRATE_WIRINGPI);
     interface_fd = serialOpen(dev, __IOLINKER_BAUDRATE);
 }
 #endif
 
 #ifdef WIRINGPI
-void iolinker::beginSPI(uint8_t channel)
+void IOlinker::beginSPI(uint8_t channel)
 {
-    interface_mode = SPI;
+    interface_mode = IOLINKER_SPI;
     interface_fd = wiringPiSPISetup(channel, __IOLINKER_SPI_CLK);
 }
 
-void iolinker::beginI2C(void)
+void IOlinker::beginI2C(void)
 {
-    interface_mode = I2C;
+    interface_mode = IOLINKER_I2C;
     interface_fd = wiringPiI2CSetup(target_addr);
 }
 
-#elif ARDUINO
+#elif defined(ARDUINO)
 #endif
 
 
 /** Messages **/
         
-uint16_t iolinker::version(void)
+uint16_t IOlinker::version(void)
 {
-    uint8_t buf[2 + REPLY_MAXMETA_BYTECOUNT];
-    writeCmd(CMD_VER);
+    uint8_t buf[2 + IOLINKER_REPLY_MAXMETA_BYTECOUNT];
+    writeCmd(IOLINKER_CMD_VER);
     writeCRC();
-    if (!readReply(buf, 2 + optionalMetaByteCount() + REPLY_META_BYTECOUNT)) {
+    if (!readReply(buf, 2 + optionalMetaByteCount() +
+                IOLINKER_REPLY_META_BYTECOUNT)) {
         return 0;
     }
     return (argByte(buf, sizeof(buf), 1) << 8 | argByte(buf, sizeof(buf), 2));
 }
 
-void iolinker::setPinType(pin_types type, uint16_t pin_start, uint16_t pin_end)
+void IOlinker::setPinType(pin_types type, uint16_t pin_start, uint16_t pin_end)
 {
-    uint8_t buf_reply[REPLY_MAXMETA_BYTECOUNT];
+    uint8_t buf_reply[IOLINKER_REPLY_MAXMETA_BYTECOUNT];
     uint8_t buf[] = { argData(pin_start >> 7), argData(pin_start),
             argData(pin_end >> 7), argData(pin_end),
             argData(type) };
-    writeCmd(CMD_TYP);
+    writeCmd(IOLINKER_CMD_TYP);
     writeMsg(buf, sizeof(buf));
     writeCRC();
-    readReply(buf_reply, optionalMetaByteCount() + REPLY_META_BYTECOUNT);
+    readReply(buf_reply, optionalMetaByteCount() +
+            IOLINKER_REPLY_META_BYTECOUNT);
 }
 
-bool iolinker::readInput(uint16_t pin)
+bool IOlinker::readInput(uint16_t pin)
 {
     uint8_t tx[] = { argData(pin >> 7), argData(pin), 0, 0 };
-    uint8_t buf[1 + REPLY_MAXMETA_BYTECOUNT];
-    writeCmd(CMD_REA);
+    uint8_t buf[1 + IOLINKER_REPLY_MAXMETA_BYTECOUNT];
+    writeCmd(IOLINKER_CMD_REA);
     writeMsg(tx, sizeof(tx));
     writeCRC();
-    if (!readReply(buf, 1 + optionalMetaByteCount() + REPLY_META_BYTECOUNT)) {
+    if (!readReply(buf, 1 + optionalMetaByteCount() +
+                IOLINKER_REPLY_META_BYTECOUNT)) {
         return 0;
     }
     return ((argByte(buf, sizeof(buf), 1) >> 6) == 1);
 }
 
-void iolinker::readInput(uint8_t *s, uint8_t len, uint16_t pin_start,
+void IOlinker::readInput(uint8_t *s, uint8_t len, uint16_t pin_start,
         uint16_t pin_end)
 {
     if (pin_end < pin_start) {
@@ -98,11 +103,12 @@ void iolinker::readInput(uint8_t *s, uint8_t len, uint16_t pin_start,
 
     uint8_t tx[] = { argData(pin_start >> 7), argData(pin_start),
             argData(pin_end >> 7), argData(pin_end) };
-    writeCmd(CMD_REA);
+    writeCmd(IOLINKER_CMD_REA);
     writeMsg(tx, sizeof(tx));
     writeCRC();
 
-    if (!readReply(s, len + optionalMetaByteCount() + REPLY_META_BYTECOUNT)) {
+    if (!readReply(s, len + optionalMetaByteCount() +
+                IOLINKER_REPLY_META_BYTECOUNT)) {
         return;
     }
 
@@ -122,18 +128,18 @@ void iolinker::readInput(uint8_t *s, uint8_t len, uint16_t pin_start,
     }
 }
 
-void iolinker::setOutput(bool state, uint16_t pin_start, uint16_t pin_end)
+void IOlinker::setOutput(bool state, uint16_t pin_start, uint16_t pin_end)
 {
     if (pin_end < pin_start) {
         pin_end = pin_start;
     }
 
-    uint8_t buf_reply[REPLY_MAXMETA_BYTECOUNT];
+    uint8_t buf_reply[IOLINKER_REPLY_MAXMETA_BYTECOUNT];
     uint8_t bytecount = (uint8_t)(
             (pin_distance(pin_start, pin_end) + 1.5) / 7);
     uint8_t buf[] = { argData(pin_start >> 7), argData(pin_start),
             argData(pin_end >> 7), argData(pin_end) };
-    writeCmd(CMD_SET);
+    writeCmd(IOLINKER_CMD_SET);
     writeMsg(buf, sizeof(buf));
     
     uint8_t byte = ((state) ? 0xff : 0x00);
@@ -142,22 +148,23 @@ void iolinker::setOutput(bool state, uint16_t pin_start, uint16_t pin_end)
     }
     
     writeCRC();
-    readReply(buf_reply, optionalMetaByteCount() + REPLY_META_BYTECOUNT);
+    readReply(buf_reply, optionalMetaByteCount() +
+            IOLINKER_REPLY_META_BYTECOUNT);
 }
 
-void iolinker::setOutput(uint8_t *s, uint8_t len, uint16_t pin_start,
+void IOlinker::setOutput(uint8_t *s, uint8_t len, uint16_t pin_start,
         uint16_t pin_end)
 {
     if (pin_end < pin_start) {
         pin_end = pin_start;
     }
 
-    uint8_t buf_reply[REPLY_MAXMETA_BYTECOUNT];
+    uint8_t buf_reply[IOLINKER_REPLY_MAXMETA_BYTECOUNT];
     uint8_t bytecount = max(1,
             (uint8_t)((pin_distance(pin_start, pin_end) + 1.5) / 7));
     uint8_t buf[4] = { argData(pin_start >> 7), argData(pin_start),
             argData(pin_end >> 7), argData(pin_end) };
-    writeCmd(CMD_SET);
+    writeCmd(IOLINKER_CMD_SET);
     writeMsg(buf, sizeof(buf));
     
     uint8_t offset = 1, j = 0;
@@ -179,82 +186,85 @@ void iolinker::setOutput(uint8_t *s, uint8_t len, uint16_t pin_start,
     }
 
     writeCRC();
-    readReply(buf_reply, optionalMetaByteCount() + REPLY_META_BYTECOUNT);
+    readReply(buf_reply, optionalMetaByteCount() +
+            IOLINKER_REPLY_META_BYTECOUNT);
 }
 
-void iolinker::syncOutputsToBuffer(void)
+void IOlinker::syncOutputsToBuffer(void)
 {
-    uint8_t buf[REPLY_MAXMETA_BYTECOUNT];
-    writeCmd(CMD_SYN);
+    uint8_t buf[IOLINKER_REPLY_MAXMETA_BYTECOUNT];
+    writeCmd(IOLINKER_CMD_SYN);
     writeCRC();
-    readReply(buf, optionalMetaByteCount() + REPLY_META_BYTECOUNT);
+    readReply(buf, optionalMetaByteCount() + IOLINKER_REPLY_META_BYTECOUNT);
 }
 
-void iolinker::syncBufferToOutputs(void)
+void IOlinker::syncBufferToOutputs(void)
 {
-    uint8_t buf[REPLY_MAXMETA_BYTECOUNT];
-    writeCmd(CMD_TRG);
+    uint8_t buf[IOLINKER_REPLY_MAXMETA_BYTECOUNT];
+    writeCmd(IOLINKER_CMD_TRG);
     writeCRC();
-    readReply(buf, optionalMetaByteCount() + REPLY_META_BYTECOUNT);
+    readReply(buf, optionalMetaByteCount() + IOLINKER_REPLY_META_BYTECOUNT);
 }
 
-void iolinker::link(uint16_t target_pin, uint16_t pin_start, uint16_t pin_end)
+void IOlinker::link(uint16_t target_pin, uint16_t pin_start, uint16_t pin_end)
 {
-    uint8_t buf_reply[REPLY_MAXMETA_BYTECOUNT];
+    uint8_t buf_reply[IOLINKER_REPLY_MAXMETA_BYTECOUNT];
     uint8_t buf[] = { argData(pin_start >> 7), argData(pin_start),
             argData(pin_end >> 7), argData(pin_end),
             argData(target_pin >> 7), argData(target_pin), };
-    writeCmd(CMD_LNK);
+    writeCmd(IOLINKER_CMD_LNK);
     writeMsg(buf, sizeof(buf));
     writeCRC();
-    readReply(buf_reply, optionalMetaByteCount() + REPLY_META_BYTECOUNT);
+    readReply(buf_reply, optionalMetaByteCount() +
+            IOLINKER_REPLY_META_BYTECOUNT);
 }
 
-void iolinker::pwm(uint8_t pwm_r, uint16_t pin_start, uint16_t pin_end)
+void IOlinker::pwm(uint8_t pwm_r, uint16_t pin_start, uint16_t pin_end)
 {
-    uint8_t buf_reply[REPLY_MAXMETA_BYTECOUNT];
+    uint8_t buf_reply[IOLINKER_REPLY_MAXMETA_BYTECOUNT];
     uint8_t buf[] = { argData(pin_start >> 7), argData(pin_start),
             argData(pin_end >> 7), argData(pin_end),
             argData(pwm_r), };
-    writeCmd(CMD_PWM);
+    writeCmd(IOLINKER_CMD_PWM);
     writeMsg(buf, sizeof(buf));
     writeCRC();
-    readReply(buf_reply, optionalMetaByteCount() + REPLY_META_BYTECOUNT);
+    readReply(buf_reply, optionalMetaByteCount() +
+            IOLINKER_REPLY_META_BYTECOUNT);
 }
 
-void iolinker::pwmPeriod(uint8_t per)
+void IOlinker::pwmPeriod(uint8_t per)
 {
-    uint8_t buf[REPLY_MAXMETA_BYTECOUNT];
+    uint8_t buf[IOLINKER_REPLY_MAXMETA_BYTECOUNT];
     per = argData(per);
-    writeCmd(CMD_PER);
+    writeCmd(IOLINKER_CMD_PER);
     writeMsg(&per, 1);
     writeCRC();
-    readReply(buf, optionalMetaByteCount() + REPLY_META_BYTECOUNT);
+    readReply(buf, optionalMetaByteCount() + IOLINKER_REPLY_META_BYTECOUNT);
 }
 
-void iolinker::reset(void)
+void IOlinker::reset(void)
 {
-    uint8_t buf[REPLY_MAXMETA_BYTECOUNT];
-    writeCmd(CMD_RST);
+    uint8_t buf[IOLINKER_REPLY_MAXMETA_BYTECOUNT];
+    writeCmd(IOLINKER_CMD_RST);
     writeCRC();
-    readReply(buf, optionalMetaByteCount() + REPLY_META_BYTECOUNT);
+    readReply(buf, optionalMetaByteCount() + IOLINKER_REPLY_META_BYTECOUNT);
 }
 
 
 /** Chip chain scanning **/
 
-uint16_t iolinker::firstAddress(void)
+uint16_t IOlinker::firstAddress(void)
 {
     uint8_t addr = 0;
     
     do {
         targetAddress(++addr);
-    } while (!available() && addr < TARGET_MAX);
+    } while (!available() && addr < IOLINKER_TARGET_MAX);
 
-    return ((addr >= TARGET_MAX) ? 0 : addr);
+    return ((addr >= IOLINKER_TARGET_MAX) ? 0 : addr);
 }
 
-uint16_t iolinker::chainLength(uint8_t start)
+uint16_t IOlinker::chainLength(uint8_t start)
 {
     uint8_t len = 0;
     
@@ -267,7 +277,7 @@ uint16_t iolinker::chainLength(uint8_t start)
 }
 
 
-uint8_t iolinker::crc7(uint8_t *s, uint8_t len, uint8_t crc)
+uint8_t IOlinker::crc7(uint8_t *s, uint8_t len, uint8_t crc)
 { /* Source: http://www.microchip.com/forums/FindPost/100156 */
 
     for (uint8_t i = 0; i < len; i++, s++) {
@@ -286,44 +296,44 @@ uint8_t iolinker::crc7(uint8_t *s, uint8_t len, uint8_t crc)
     return crc;
 }
 
-bool iolinker::readReply(uint8_t *s, uint8_t len)
+bool IOlinker::readReply(uint8_t *s, uint8_t len)
 {
     uint8_t i = 0;
 
 #if defined(WIRINGPI) || defined(__PC)
-    if (interface_mode == I2C || interface_mode == SPI ||
-            interface_mode == UART) {
+    if (interface_mode == IOLINKER_I2C || interface_mode == IOLINKER_SPI ||
+            interface_mode == IOLINKER_UART) {
         if (interface_fd == -1) {
-            status = ERROR_INTERFACE;
+            status = IOLINKER_ERROR_INTERFACE;
             return false;
         }
         
         read(interface_fd, s, len);
     }
 #elif defined(ARDUINO)
-    if (interface_mode == I2C) {
+    if (interface_mode == IOLINKER_I2C) {
         Wire.requestFrom(target_addr, len);
         for (; i < len && Wire.available(); i++) {
             s[i] = (uint8_t)Wire.read();
         }
-    } else if (interface_mode == SPI) {
+    } else if (interface_mode == IOLINKER_SPI) {
 #if 0 // Delay?
-        resetSS();
+        digitalWrite(__IOLINKER_SPI_CS, HIGH); // unselect
         delay(1);
-        setSS();
+        digitalWrite(__IOLINKER_SPI_CS, LOW); // select
 #endif
 
         SPI.beginTransaction(__IOlINKER_SPI_SETTINGS); 
         SPI.transfer(s, len);
         SPI.endTransaction();
-        resetSS();
-    } else if (interface_mode == UART) {
+        digitalWrite(__IOLINKER_SPI_CS, HIGH); // unselect
+    } else if (interface_mode == IOLINKER_UART) {
         for (; i < len; i++) {
             s[i] = interface_stream->read();
         }
     }
 #endif
-    else if (interface_mode == INTERFACE_CALLBACK) {
+    else if (interface_mode == IOLINKER_INTERFACE_CALLBACK) {
         i = interface_testfunc(interface_buf_reset,
                 interface_buf - interface_buf_reset);
         /* Reply is in '*s', and is of length 'size' */
@@ -333,7 +343,7 @@ bool iolinker::readReply(uint8_t *s, uint8_t len)
 
     /* Verify length of return message */
     if (i < len || i < (2 + optionalMetaByteCount())) {
-        status = ERROR_NOREPLY;
+        status = IOLINKER_ERROR_NOREPLY;
         return false;
     }
 
@@ -342,24 +352,24 @@ bool iolinker::readReply(uint8_t *s, uint8_t len)
         s[i - 1] <<= 1;
         
         if (crc7(s, i) != 0) {
-            status = ERROR_CRC;
+            status = IOLINKER_ERROR_CRC;
             return false;
         }
     }
 
-    status = (iolinker::status_code)s[1 + addrByteCount()];
+    status = (IOlinker::status_code)s[1 + addrByteCount()];
     return true;
 }
 
-void iolinker::writeMsg(uint8_t *s, uint8_t len)
+void IOlinker::writeMsg(uint8_t *s, uint8_t len)
 {
 #ifdef WIRINGPI
     /* Should work for UART, SPI and I2C alike. */
-    if (interface_mode == I2C ||
-            interface_mode == SPI ||
-            interface_mode == UART) {
+    if (interface_mode == IOLINKER_I2C ||
+            interface_mode == IOLINKER_SPI ||
+            interface_mode == IOLINKER_UART) {
         if (interface_fd == -1) {
-            status = ERROR_INTERFACE;
+            status = IOLINKER_ERROR_INTERFACE;
             return;
         }
         
@@ -367,18 +377,18 @@ void iolinker::writeMsg(uint8_t *s, uint8_t len)
     }
 #elif defined(ARDUINO)
     for (uint8_t i = 0; i < len; i++) {
-        if (interface_mode == I2C) {
-            Wire.writeMsg(s[i]);
-        } else if (interface_mode == SPI) {
+        if (interface_mode == IOLINKER_I2C) {
+            Wire.write(s[i]);
+        } else if (interface_mode == IOLINKER_SPI) {
             SPI.transfer(s[i]);
-        } else if (interface_mode == UART) {
-            interface_stream->writeMsg(s[i]);
+        } else if (interface_mode == IOLINKER_UART) {
+            interface_stream->write(s[i]);
         }
     }
 #else
-    if (interface_mode == UART) {
+    if (interface_mode == IOLINKER_UART) {
         if (interface_fd == -1) {
-            status = ERROR_INTERFACE;
+            status = IOLINKER_ERROR_INTERFACE;
             return;
         }
         
@@ -386,7 +396,7 @@ void iolinker::writeMsg(uint8_t *s, uint8_t len)
     }
 #endif
 
-    else if (interface_mode == INTERFACE_CALLBACK) {
+    if (interface_mode == IOLINKER_INTERFACE_CALLBACK) {
         if ((interface_buf + len) <= interface_buf_end) {
             strncpy((char *)interface_buf, (const char *)s, (size_t)len);
             interface_buf += len;
@@ -396,25 +406,25 @@ void iolinker::writeMsg(uint8_t *s, uint8_t len)
     __crc = crc7(s, len, __crc);
 }
 
-void iolinker::writeCmd(cmd_t cmd)
+void IOlinker::writeCmd(cmd_t cmd)
 {
     __crc = 0;
 #ifdef __PC
     interface_buf = interface_buf_reset;
 #endif
 
-    cmdbyte &= ~(BITMASK_CMD);
+    cmdbyte &= ~(IOLINKER_BITMASK_CMD);
     cmdbyte |= cmd;
 
 #ifdef WIRINGPI
     /* Nothing to do on Raspberry */
 #elif defined(ARDUINO)
-    if (interface_mode == SPI) {
-        setSS();
+    if (interface_mode == IOLINKER_SPI) {
+        digitalWrite(__IOLINKER_SPI_CS, LOW); // select
         SPI.beginTransaction(__IOlINKER_SPI_SETTINGS); 
-    } else if (interface_mode == I2C) {
+    } else if (interface_mode == IOLINKER_I2C) {
         Wire.beginTransmission(target_addr);
-    } else if (interface_mode == UART) {
+    } else if (interface_mode == IOLINKER_UART) {
         /* Nothing to prepare for UART transmission */
     }
 #else

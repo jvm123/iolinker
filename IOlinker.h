@@ -2,13 +2,13 @@
  * (C) 2016 jInvent Software Development <prog@jinvent.de>
  * MIT License
  * --
- * http://jinvent.de/iolinker
+ * http://jinvent.de/IOlinker
  */
 
 /**
- * @file iolinker.h
+ * @file IOlinker.h
  * @author Julian von Mendel
- * @brief iolinker class header
+ * @brief IOlinker class header
  */
 
 #ifndef __IOLINKER_H__
@@ -24,7 +24,9 @@
 #include <wiringPiSPI.h>
 #include <wiringPiI2C.h>
 #elif defined(ARDUINO)
-#include "Arduino.h"
+#include <Stream.h>
+#include <SPI.h>
+#include <Wire.h>
 #elif !defined(__PC)
 #define __PC
 #include "wiringSerial.h"
@@ -33,7 +35,40 @@
 #define __IOLINKER_DEBUG (1) /*!< Activate debugging output */
 
 
-class iolinker {
+class IOlinker {
+    public:
+        /**
+         * @brief Function type for the beginTest() callback interface
+         */
+        typedef uint8_t (*testfunc_t)(unsigned char *s, uint8_t len);
+        
+    private:
+        /**
+         * @brief Communication interface identifier
+         */
+        enum interface_mode {
+            IOLINKER_INTERFACE_UNSET = 0,
+            IOLINKER_UART,
+            IOLINKER_SPI,
+            IOLINKER_I2C,
+            IOLINKER_INTERFACE_CALLBACK,
+        } interface_mode = IOLINKER_INTERFACE_UNSET;
+        
+        testfunc_t interface_testfunc; /*!< testfunc interface function
+                                            pointer */
+        unsigned char *interface_buf, *interface_buf_reset,
+                      *interface_buf_end; /*!< String buffers the testfunc
+                                               interface uses to communicate
+                                               with the user methods */
+
+#ifdef ARDUINO
+        Stream *interface_stream; /*!< Stream object of serial interface */
+#endif
+
+#if defined(WIRINGPI) || defined(__PC)
+        int interface_fd; /*!< File descriptor for communication interface */
+#endif
+
     public:
 #define __IOLINKER_BAUDRATE (115200)
 #define __IOLINKER_BAUDRATE_WIRINGPI (B115200)
@@ -67,7 +102,7 @@ class iolinker {
          */
         inline void beginStream(Stream &stream)
         {
-            interface_mode = UART;
+            interface_mode = IOLINKER_UART;
             interface_stream = &stream;
         }
 
@@ -78,11 +113,15 @@ class iolinker {
          */
         inline void beginSPI(void)
         {
-            interface_mode = SPI;
+            interface_mode = IOLINKER_SPI;
             SPI.begin();
-            initSS();
-            SPI.setClockDivider(SPI_CS, 21);
-            SPI.setDataMode(SPI_CS, SPI_MODE0);
+            pinMode(__IOLINKER_SPI_CS, OUTPUT);
+#ifdef SPI_CLOCK_DIV2
+            SPI.setClockDivider(SPI_CLOCK_DIV2);
+#else
+            SPI.setClockDivider(SPI_CLOCK_DIV4);
+#endif
+            SPI.setDataMode(SPI_MODE0);
         }
         
         /**
@@ -90,17 +129,12 @@ class iolinker {
          */
         inline void beginI2C(void)
         {
-            interface_mode = I2C;
+            interface_mode = IOLINKER_I2C;
             Wire.begin();
         }
 
 #endif
 
-        /**
-         * @brief Function type for the beginTest() callback interface
-         */
-        typedef uint8_t (*testfunc_t)(unsigned char *s, uint8_t len);
-        
         /**
          * @brief Initialize communication by means of a callback function
          *      that handles the communication
@@ -111,7 +145,7 @@ class iolinker {
          */
         inline void beginTest(testfunc_t testfunc, uint8_t *buf, uint8_t size)
         {
-            interface_mode = INTERFACE_CALLBACK;
+            interface_mode = IOLINKER_INTERFACE_CALLBACK;
             interface_testfunc = testfunc;
             interface_buf = buf;
             interface_buf_reset = buf;
@@ -125,10 +159,10 @@ class iolinker {
          * @brief Node target addresses
          */
         typedef enum target_address {
-            TARGET_ALL = 0x00, /*!< Target all chips simultaneously. Only
+            IOLINKER_TARGET_ALL = 0x00, /*!< Target all chips simultaneously. Only
                                     supported in Pro versions. */
-            TARGET_FIRST = 0x01,
-            TARGET_MAX = 0x7f,
+            IOLINKER_TARGET_FIRST = 0x01,
+            IOLINKER_TARGET_MAX = 0x7f,
         } target_address;
 
         /**
@@ -152,9 +186,9 @@ class iolinker {
         inline void buffer(bool active)
         {
             if (active) {
-                cmdbyte |= BITMASK_BUF_BIT;
+                cmdbyte |= IOLINKER_BITMASK_BUF_BIT;
             } else {
-                cmdbyte &= ~(BITMASK_BUF_BIT);
+                cmdbyte &= ~(IOLINKER_BITMASK_BUF_BIT);
             }
         }
 
@@ -164,9 +198,9 @@ class iolinker {
         inline void crc(bool active)
         {
             if (active) {
-                cmdbyte |= BITMASK_CRC_BIT;
+                cmdbyte |= IOLINKER_BITMASK_CRC_BIT;
             } else {
-                cmdbyte &= ~(BITMASK_CRC_BIT);
+                cmdbyte &= ~(IOLINKER_BITMASK_CRC_BIT);
             }
         }
 
@@ -176,14 +210,14 @@ class iolinker {
          * @brief Return status codes
          */
         typedef enum status_code {
-            STATUS_UNDEFINED = 0x00,
-            STATUS_SUCCESS = 0x01,
-            ERROR = 0x02,
-            ERROR_ARGCOUNT = 0x03,
-            ERROR_PINNUM = 0x04,
-            ERROR_INTERFACE = 0xfc,
-            ERROR_NOREPLY = 0xfd,
-            ERROR_CRC = 0xff,
+            IOLINKER_STATUS_UNDEFINED = 0x00,
+            IOLINKER_STATUS_SUCCESS = 0x01,
+            IOLINKER_ERROR = 0x02,
+            IOLINKER_ERROR_ARGCOUNT = 0x03,
+            IOLINKER_ERROR_PINNUM = 0x04,
+            IOLINKER_ERROR_INTERFACE = 0xfc,
+            IOLINKER_ERROR_NOREPLY = 0xfd,
+            IOLINKER_ERROR_CRC = 0xff,
         } status_code;
         
         /**
@@ -201,7 +235,7 @@ class iolinker {
         inline bool available(void)
         {
             version();
-            return (statusCode() == STATUS_SUCCESS);
+            return (statusCode() == IOLINKER_STATUS_SUCCESS);
         }
 
 
@@ -248,10 +282,10 @@ class iolinker {
          * @brief Pin type codes
          */
         typedef enum pin_types {
-            INPUT = 0x00, /*!< Low impedance/tristate pin type */
-            PULLDOWN = 0x01, /*!< Pulldown input pin type */
-            PULLUP = 0x02, /*!< Pullup input pin type */
-            OUTPUT = 0x03, /*!< Output pin type */
+            IOLINKER_INPUT = 0x00, /*!< Low impedance/tristate pin type */
+            IOLINKER_PULLDOWN = 0x01, /*!< Pulldown input pin type */
+            IOLINKER_PULLUP = 0x02, /*!< Pullup input pin type */
+            IOLINKER_OUTPUT = 0x03, /*!< Output pin type */
         } pin_types;
 
         /**
@@ -367,7 +401,7 @@ class iolinker {
          * @param per PWM period between 0 and 127
          *
          * The resulting PWM period will be clk_period/(per+1)*128.
-         * This command is only available in PRO versions of the iolinker chip.
+         * This command is only available in PRO versions of the IOlinker chip.
          */
         void pwmPeriod(uint8_t per);
 
@@ -411,82 +445,56 @@ class iolinker {
 #endif
 
         /**
-         * @brief Bit masks for the iolinker protocol
+         * @brief Bit masks for the IOlinker protocol
          */
         enum bit_pos {
-            BITMASK_CMD_BIT = (1 << 7), /*!< Command bytes contain this bit */
-            BITMASK_RW_BIT = (1 << 6), /*!< If this bit is 1, the message is
-                                            of type 'read' */
-            BITMASK_BUF_BIT = (1 << 5), /*!< If this bit is 1, updated pin
-                                             states are supposed to be
-                                             buffered, rather than executed
-                                             directly */
-            BITMASK_CRC_BIT = (1 << 4), /*!< If this bit is 1, the message
-                                             ends with a CRC byte */
-            BITMASK_CMD = 0x4f, /*!< The part of the command byte that contains
-                                     the actual command code; includes the RW
-                                     bit as part of the command code */
-            BITMASK_DATA = 0x7f, /*!< The only bits that are set and may be
-                                      set and are supposed to be used, in
-                                      argument bytes */
-            BITMASK_PIN_ADDR = 0x7ff, /*!< I(nvert), V(irtual) and 10 pin
-                                           number bits make up the 12 bit pin
-                                           address */
-            REPLY_MAXMETA_BYTECOUNT = 4, /*!< Meta byte count in replies,
-                                              address byte included */
-            REPLY_META_BYTECOUNT = 2, /*!< Meta byte count in replies that
-                                           is always there */
-            BITMASK_PIN_ADDRESS_VIRT = (1 << 11), /*!< Virtual pin bit */
-            BITMASK_PIN_ADDRESS_INV = (1 << 10), /*!< Invert pin state
-                                                      bit */
+            IOLINKER_BITMASK_CMD_BIT = (1 << 7), /*!< Command bytes contain this bit */
+            IOLINKER_BITMASK_RW_BIT = (1 << 6), /*!< If this bit is 1, the message is
+                                                     of type 'read' */
+            IOLINKER_BITMASK_BUF_BIT = (1 << 5), /*!< If this bit is 1, updated pin
+                                                      states are supposed to be
+                                                      buffered, rather than executed
+                                                      directly */
+            IOLINKER_BITMASK_CRC_BIT = (1 << 4), /*!< If this bit is 1, the message
+                                                      ends with a CRC byte */
+            IOLINKER_BITMASK_CMD = 0x4f, /*!< The part of the command byte that contains
+                                              the actual command code; includes the RW
+                                              bit as part of the command code */
+            IOLINKER_BITMASK_DATA = 0x7f, /*!< The only bits that are set and may be
+                                               set and are supposed to be used, in
+                                               argument bytes */
+            IOLINKER_BITMASK_PIN_ADDR = 0x7ff, /*!< I(nvert), V(irtual) and 10 pin
+                                                    number bits make up the 12 bit pin
+                                                    address */
+            IOLINKER_REPLY_MAXMETA_BYTECOUNT = 4, /*!< Meta byte count in replies,
+                                                       address byte included */
+            IOLINKER_REPLY_META_BYTECOUNT = 2, /*!< Meta byte count in replies that
+                                                    is always there */
+            IOLINKER_BITMASK_PIN_ADDRESS_VIRT = (1 << 11), /*!< Virtual pin bit */
+            IOLINKER_BITMASK_PIN_ADDRESS_INV = (1 << 10), /*!< Invert pin state
+                                                               bit */
         };
 
         enum virtual_pins {
-            VIRTUAL_CLK = (0x01 | BITMASK_PIN_ADDRESS_VIRT),
-            VIRTUAL_CLK2 = (0x02 | BITMASK_PIN_ADDRESS_VIRT),
-            VIRTUAL_CLK4 = (0x03 | BITMASK_PIN_ADDRESS_VIRT),
-            VIRTUAL_CLK8 = (0x04 | BITMASK_PIN_ADDRESS_VIRT),
-            VIRTUAL_CLK16 = (0x05 | BITMASK_PIN_ADDRESS_VIRT),
-            VIRTUAL_CLK32 = (0x06 | BITMASK_PIN_ADDRESS_VIRT),
-            VIRTUAL_CLK64 = (0x07 | BITMASK_PIN_ADDRESS_VIRT),
-            VIRTUAL_CLK128 = (0x08 | BITMASK_PIN_ADDRESS_VIRT),
-            VIRTUAL_CLK256 = (0x09 | BITMASK_PIN_ADDRESS_VIRT),
+            IOLINKER_VIRTUAL_CLK = (0x01 | IOLINKER_BITMASK_PIN_ADDRESS_VIRT),
+            IOLINKER_VIRTUAL_CLK2 = (0x02 | IOLINKER_BITMASK_PIN_ADDRESS_VIRT),
+            IOLINKER_VIRTUAL_CLK4 = (0x03 | IOLINKER_BITMASK_PIN_ADDRESS_VIRT),
+            IOLINKER_VIRTUAL_CLK8 = (0x04 | IOLINKER_BITMASK_PIN_ADDRESS_VIRT),
+            IOLINKER_VIRTUAL_CLK16 = (0x05 | IOLINKER_BITMASK_PIN_ADDRESS_VIRT),
+            IOLINKER_VIRTUAL_CLK32 = (0x06 | IOLINKER_BITMASK_PIN_ADDRESS_VIRT),
+            IOLINKER_VIRTUAL_CLK64 = (0x07 | IOLINKER_BITMASK_PIN_ADDRESS_VIRT),
+            IOLINKER_VIRTUAL_CLK128 = (0x08 | IOLINKER_BITMASK_PIN_ADDRESS_VIRT),
+            IOLINKER_VIRTUAL_CLK256 = (0x09 | IOLINKER_BITMASK_PIN_ADDRESS_VIRT),
         };
 
-        status_code status = STATUS_UNDEFINED; /*!< Return status of the last
-                                                    command sent to iolinker
-                                                    chip */
+        status_code status = IOLINKER_STATUS_UNDEFINED; /*!< Return status of the last
+                                                             command sent to IOlinker
+                                                             chip */
         uint8_t __crc = 0; /*!< CRC of the message currently being
                                 constructed */
-        uint8_t target_addr = TARGET_FIRST; /*!< Current target address */
-        uint8_t cmdbyte = BITMASK_CMD_BIT; /*!< Current command byte */
+        uint8_t target_addr = IOLINKER_TARGET_FIRST; /*!< Current target address */
+        uint8_t cmdbyte = IOLINKER_BITMASK_CMD_BIT; /*!< Current command byte */
         
-        /**
-         * @brief Communication interface identifier
-         */
-        enum interface_mode {
-            INTERFACE_UNSET = 0,
-            UART,
-            SPI,
-            I2C,
-            INTERFACE_CALLBACK,
-        } interface_mode = INTERFACE_UNSET;
-        
-#ifndef ARDUINO
-        testfunc_t interface_testfunc; /*!< testfunc interface function
-                                            pointer */
-        unsigned char *interface_buf, *interface_buf_reset,
-                      *interface_buf_end; /*!< String buffers the testfunc
-                                               interface uses to communicate
-                                               with the user methods */
-#else
-        Stream *interface_stream; /*!< Stream object of serial interface */
-#endif
-
-#if defined(WIRINGPI) || defined(__PC)
-        int interface_fd; /*!< File descriptor for communication interface */
-#endif
-
         /** Protocol format **/
         /* Byte order:
            Command, address, arg1, ..., CRC
@@ -496,12 +504,12 @@ class iolinker {
         */
 
         /**
-         * @brief Extract state of BITMASK_CMD_BIT from byte
+         * @brief Extract state of IOLINKER_BITMASK_CMD_BIT from byte
          */
 
         inline bool cmdBitOn(uint8_t b)
         {
-            return ((b & BITMASK_CMD_BIT) != 0);
+            return ((b & IOLINKER_BITMASK_CMD_BIT) != 0);
         }
         
         /**
@@ -509,7 +517,7 @@ class iolinker {
          */
         inline bool rwBitOn(uint8_t b)
         {
-            return ((b & BITMASK_RW_BIT) != 0);
+            return ((b & IOLINKER_BITMASK_RW_BIT) != 0);
         }
         
         /**
@@ -517,7 +525,7 @@ class iolinker {
          */
         inline bool bufBitOn(uint8_t b)
         {
-            return ((b & BITMASK_BUF_BIT) != 0);
+            return ((b & IOLINKER_BITMASK_BUF_BIT) != 0);
         }
         
         /**
@@ -525,7 +533,7 @@ class iolinker {
          */
         inline bool crcBitOn(uint8_t b)
         {
-            return ((b & BITMASK_CRC_BIT) != 0);
+            return ((b & IOLINKER_BITMASK_CRC_BIT) != 0);
         }
         
         /**
@@ -533,7 +541,7 @@ class iolinker {
          */
         inline uint8_t commandCode(uint8_t b)
         {
-            return (b & BITMASK_CMD);
+            return (b & IOLINKER_BITMASK_CMD);
         }
         
         /**
@@ -541,7 +549,7 @@ class iolinker {
          */
         inline uint8_t argData(uint8_t b)
         {
-            return (b & BITMASK_DATA);
+            return (b & IOLINKER_BITMASK_DATA);
         }
 
         /**
@@ -552,7 +560,8 @@ class iolinker {
          */
         inline uint8_t cmdByte(uint8_t *buf, uint8_t len)
         {
-            if (len < 1 || ((buf[0] & BITMASK_CMD_BIT) != BITMASK_CMD_BIT)) {
+            if (len < 1 || ((buf[0] & IOLINKER_BITMASK_CMD_BIT) !=
+                        IOLINKER_BITMASK_CMD_BIT)) {
                 return 0;
             }
             return buf[0];
@@ -566,7 +575,7 @@ class iolinker {
          */
         inline uint8_t addrByteCount(void)
         {
-            return ((interface_mode == I2C) ? 0 : 1);
+            return ((interface_mode == IOLINKER_I2C) ? 0 : 1);
         }
             
         /**
@@ -646,12 +655,12 @@ class iolinker {
         
         inline uint16_t virtual_pin(uint16_t pin_address)
         {
-            return (pin_address | iolinker::BITMASK_PIN_ADDRESS_VIRT);
+            return (pin_address | IOlinker::IOLINKER_BITMASK_PIN_ADDRESS_VIRT);
         }
 
         inline uint16_t invert(uint16_t pin_address)
         {
-            return (pin_address | iolinker::BITMASK_PIN_ADDRESS_INV);
+            return (pin_address | IOlinker::IOLINKER_BITMASK_PIN_ADDRESS_INV);
         }
 
 
@@ -659,16 +668,16 @@ class iolinker {
          * @brief Command codes
          */
         typedef enum cmd_t {
-            CMD_VER = 0x01 | BITMASK_RW_BIT,
-            CMD_TYP = 0x02,
-            CMD_REA = 0x07 | BITMASK_RW_BIT,
-            CMD_SET = 0x03,
-            CMD_SYN = 0x08,
-            CMD_TRG = 0x09,
-            CMD_LNK = 0x04,
-            CMD_PWM = 0x05,
-            CMD_PER = 0x06,
-            CMD_RST = 0x0f,
+            IOLINKER_CMD_VER = 0x01 | IOLINKER_BITMASK_RW_BIT,
+            IOLINKER_CMD_TYP = 0x02,
+            IOLINKER_CMD_REA = 0x07 | IOLINKER_BITMASK_RW_BIT,
+            IOLINKER_CMD_SET = 0x03,
+            IOLINKER_CMD_SYN = 0x08,
+            IOLINKER_CMD_TRG = 0x09,
+            IOLINKER_CMD_LNK = 0x04,
+            IOLINKER_CMD_PWM = 0x05,
+            IOLINKER_CMD_PER = 0x06,
+            IOLINKER_CMD_RST = 0x0f,
         } cmd_t;
 
         /**
@@ -676,7 +685,7 @@ class iolinker {
          */
         inline uint16_t pin_addr(uint16_t pin)
         {
-            return (pin & BITMASK_PIN_ADDR);
+            return (pin & IOLINKER_BITMASK_PIN_ADDR);
         }
 
         /**
@@ -699,8 +708,8 @@ class iolinker {
          * @param buf String buffer to write into, with at least
          *       optionalMetaByteCount() + REPLY_META_BYTECOUNT bytes
          * @param len String length
-         * @return Returns false and set status code to ERROR_CRC on CRC
-         *      failure or no received reply, otherwise returns true.
+         * @return Returns false and set status code to IOLINKER_ERROR_CRC on
+         *      CRC failure or no received reply, otherwise returns true.
          */
         bool readReply(uint8_t *buf, uint8_t len);
 
