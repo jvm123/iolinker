@@ -5,7 +5,7 @@ CPPFLAGS=-std=gnu++11 -g # $(shell root-config --cflags) -lm
 LDFLAGS=-g #$(shell root-config --ldflags) -lboost_unit_test_framework -lm
 LDLIBS=#$(shell root-config --libs)
 
-SRCS=IOlinker.cpp
+SRCS=IOLinker.cpp
 SRCS_unittest=$(SRCS) wiringSerial.cpp iolinker_unittest.cpp
 SRCS_pi=$(SRCS) wiringSerial.cpp wiringPiSPI.cpp wiringPiI2C.cpp raspberry_test.cpp
 

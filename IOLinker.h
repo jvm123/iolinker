@@ -2,13 +2,13 @@
  * (C) 2016 jInvent Software Development <prog@jinvent.de>
  * MIT License
  * --
- * http://jinvent.de/IOlinker
+ * http://jinvent.de/IOLinker
  */
 
 /**
- * @file IOlinker.h
+ * @file IOLinker.h
  * @author Julian von Mendel
- * @brief IOlinker class header
+ * @brief IOLinker class header
  */
 
 #ifndef __IOLINKER_H__
@@ -35,7 +35,7 @@
 #define __IOLINKER_DEBUG (1) /*!< Activate debugging output */
 
 
-class IOlinker {
+class IOLinker {
     public:
         /**
          * @brief Function type for the beginTest() callback interface
@@ -401,7 +401,7 @@ class IOlinker {
          * @param per PWM period between 0 and 127
          *
          * The resulting PWM period will be clk_period/(per+1)*128.
-         * This command is only available in PRO versions of the IOlinker chip.
+         * This command is only available in PRO versions of the IOLinker chip.
          */
         void pwmPeriod(uint8_t per);
 
@@ -445,7 +445,7 @@ class IOlinker {
 #endif
 
         /**
-         * @brief Bit masks for the IOlinker protocol
+         * @brief Bit masks for the IOLinker protocol
          */
         enum bit_pos {
             IOLINKER_BITMASK_CMD_BIT = (1 << 7), /*!< Command bytes contain this bit */
@@ -488,7 +488,7 @@ class IOlinker {
         };
 
         status_code status = IOLINKER_STATUS_UNDEFINED; /*!< Return status of the last
-                                                             command sent to IOlinker
+                                                             command sent to IOLinker
                                                              chip */
         uint8_t __crc = 0; /*!< CRC of the message currently being
                                 constructed */
@@ -655,12 +655,12 @@ class IOlinker {
         
         inline uint16_t virtual_pin(uint16_t pin_address)
         {
-            return (pin_address | IOlinker::IOLINKER_BITMASK_PIN_ADDRESS_VIRT);
+            return (pin_address | IOLinker::IOLINKER_BITMASK_PIN_ADDRESS_VIRT);
         }
 
         inline uint16_t invert(uint16_t pin_address)
         {
-            return (pin_address | IOlinker::IOLINKER_BITMASK_PIN_ADDRESS_INV);
+            return (pin_address | IOLinker::IOLINKER_BITMASK_PIN_ADDRESS_INV);
         }
 
 
