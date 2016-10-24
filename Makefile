@@ -35,3 +35,7 @@ dist-clean: clean
 
 	include .depend
 
+zip:
+	rm IOLinker.zip
+	zip IOLinker.zip IOLinker.cpp IOLinker.h
+

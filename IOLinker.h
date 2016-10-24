@@ -70,7 +70,7 @@ class IOLinker {
 #endif
 
     public:
-#define __IOLINKER_BAUDRATE (115200)
+#define IOLINKER_BAUDRATE 115200UL
 #define __IOLINKER_BAUDRATE_WIRINGPI (B115200)
 
 #if defined(WIRINGPI) || defined(__PC)
@@ -106,7 +106,7 @@ class IOLinker {
             interface_stream = &stream;
         }
 
-#define __IOlINKER_SPI_SETTINGS SPISettings(14000000, MSBFIRST, SPI_MODE0)
+#define __IOLINKER_SPI_SETTINGS SPISettings(14000000, MSBFIRST, SPI_MODE0)
 #define __IOLINKER_SPI_CS (10)        
         /**
          * @brief Setup SPI master

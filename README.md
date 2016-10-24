@@ -39,6 +39,10 @@ iolinker.beginI2C();
 Setting up the serial interface to communicate with UART iolinker chips:
 
 ```c++
+Serial.begin(IOLINKER_BAUDRATE); // Use Serial1 on Arduino Leonardo!
+while (!Serial1) {
+    ; // wait for serial port to connect. Needed for Leonardo only
+}
 iolinker.beginStream(Serial);
 ```
 

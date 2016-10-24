@@ -323,7 +323,7 @@ bool IOLinker::readReply(uint8_t *s, uint8_t len)
         digitalWrite(__IOLINKER_SPI_CS, LOW); // select
 #endif
 
-        SPI.beginTransaction(__IOlINKER_SPI_SETTINGS); 
+        SPI.beginTransaction(__IOLINKER_SPI_SETTINGS); 
         SPI.transfer(s, len);
         SPI.endTransaction();
         digitalWrite(__IOLINKER_SPI_CS, HIGH); // unselect
@@ -421,7 +421,7 @@ void IOLinker::writeCmd(cmd_t cmd)
 #elif defined(ARDUINO)
     if (interface_mode == IOLINKER_SPI) {
         digitalWrite(__IOLINKER_SPI_CS, LOW); // select
-        SPI.beginTransaction(__IOlINKER_SPI_SETTINGS); 
+        SPI.beginTransaction(__IOLINKER_SPI_SETTINGS); 
     } else if (interface_mode == IOLINKER_I2C) {
         Wire.beginTransmission(target_addr);
     } else if (interface_mode == IOLINKER_UART) {
