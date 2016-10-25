@@ -26,7 +26,7 @@ void IOLinker::beginSerial(const char *dev)
 {
     interface_mode = IOLINKER_UART;
     //interface_fd = serialOpen(dev, __IOLINKER_BAUDRATE_WIRINGPI);
-    interface_fd = serialOpen(dev, __IOLINKER_BAUDRATE);
+    interface_fd = serialOpen(dev, IOLINKER_BAUDRATE);
 }
 #endif
 
@@ -96,7 +96,7 @@ void IOLinker::readInput(uint8_t *s, uint8_t len, uint16_t pin_start,
     }
 
     uint8_t bytecount = (uint8_t)(
-            (pin_distance(pin_start, pin_end) + 1.5) / 7);
+            (pin_distance(pin_start, pin_end) + 7.5) / 7);
     if (bytecount < len) {
         len = bytecount;
     }
@@ -136,7 +136,7 @@ void IOLinker::setOutput(bool state, uint16_t pin_start, uint16_t pin_end)
 
     uint8_t buf_reply[IOLINKER_REPLY_MAXMETA_BYTECOUNT];
     uint8_t bytecount = (uint8_t)(
-            (pin_distance(pin_start, pin_end) + 1.5) / 7);
+            (pin_distance(pin_start, pin_end) + 7.5) / 7);
     uint8_t buf[] = { argData(pin_start >> 7), argData(pin_start),
             argData(pin_end >> 7), argData(pin_end) };
     writeCmd(IOLINKER_CMD_SET);
@@ -161,7 +161,7 @@ void IOLinker::setOutput(uint8_t *s, uint8_t len, uint16_t pin_start,
 
     uint8_t buf_reply[IOLINKER_REPLY_MAXMETA_BYTECOUNT];
     uint8_t bytecount = max(1,
-            (uint8_t)((pin_distance(pin_start, pin_end) + 1.5) / 7));
+            (uint8_t)((pin_distance(pin_start, pin_end) + 7.5) / 7));
     uint8_t buf[4] = { argData(pin_start >> 7), argData(pin_start),
             argData(pin_end >> 7), argData(pin_end) };
     writeCmd(IOLINKER_CMD_SET);
@@ -298,7 +298,7 @@ uint8_t IOLinker::crc7(uint8_t *s, uint8_t len, uint8_t crc)
 
 bool IOLinker::readReply(uint8_t *s, uint8_t len)
 {
-    uint8_t i = 0;
+    int i = 0;
 
 #if defined(WIRINGPI) || defined(__PC)
     if (interface_mode == IOLINKER_I2C || interface_mode == IOLINKER_SPI ||
@@ -307,8 +307,19 @@ bool IOLinker::readReply(uint8_t *s, uint8_t len)
             status = IOLINKER_ERROR_INTERFACE;
             return false;
         }
-        
-        read(interface_fd, s, len);
+       
+        for (int timeout = 10; !serialDataAvail(interface_fd)
+                && timeout > 0; timeout--) {
+            usleep(1);
+        }
+
+        if (serialDataAvail(interface_fd)) {
+            i = read(interface_fd, s, len);
+            
+            /*if (i < 0) {
+                i = 0;
+            }*/
+        }
     }
 #elif defined(ARDUINO)
     if (interface_mode == IOLINKER_I2C) {

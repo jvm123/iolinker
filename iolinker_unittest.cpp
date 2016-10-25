@@ -52,8 +52,9 @@ uint8_t IOLinker_sim(unsigned char *s, uint8_t len)
     
     /* Verify received message */
     if (sim_mode == SIM_MODE_CHECK &&
-            strncmp((const char *)s, (const char *)buf_expectedmsg,
-                std::min(len, expectedmsg_len)) != 0) {
+            (strncmp((const char *)s, (const char *)buf_expectedmsg,
+                std::min(len, expectedmsg_len)) != 0 ||
+                expectedmsg_len != len)) {
         return 0;
     }
 

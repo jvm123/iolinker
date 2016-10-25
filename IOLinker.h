@@ -78,7 +78,7 @@ class IOLinker {
          * @brief Setup serial interface
          * @param Device file
          */
-        void beginSerial(const char *dev);
+        void beginSerial(const char *dev = "/dev/ttyUSB0");
 #endif
 
 #ifdef WIRINGPI
