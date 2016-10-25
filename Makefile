@@ -1,5 +1,5 @@
 CC=gcc
-CXX=g++
+CXX=g++-4.8
 RM=rm -f
 CPPFLAGS=-std=gnu++11 -g # $(shell root-config --cflags) -lm
 LDFLAGS=-g #$(shell root-config --ldflags) -lboost_unit_test_framework -lm
@@ -8,7 +8,7 @@ LDLIBS=#$(shell root-config --libs)
 SRCS=IOLinker.cpp
 SRCS_unittest=$(SRCS) wiringSerial.cpp iolinker_unittest.cpp
 SRCS_pcserial=$(SRCS) wiringSerial.cpp iolinker_pcserial.cpp
-SRCS_pi=$(SRCS) wiringSerial.cpp wiringPiSPI.cpp wiringPiI2C.cpp iolinker_pi.cpp
+SRCS_pi=$(SRCS) iolinker_pi.cpp
 
 OBJS=$(subst .cpp,.o,$(SRCS))
 OBJS_unittest=$(subst .cpp,.o,$(SRCS_unittest))

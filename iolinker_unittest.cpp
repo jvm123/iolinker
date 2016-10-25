@@ -562,7 +562,7 @@ int main(void)
     assert(IOLinker.argData(0xff) == 0x7f);
   
     /* Test behaviour of uninitialized class (error case) */
-    assert(IOLinker.statusCode() == IOLinker::IOLINKER_STATUS_UNDEFINED);
+    assert(IOLinker.statusCode() == IOLinker::IOLINKER_ERROR_NOREPLY);
     assert(IOLinker.chainLength() == 0);
     assert(IOLinker.available() == false);
 

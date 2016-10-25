@@ -225,7 +225,11 @@ class IOLinker {
          */
         inline status_code statusCode(void)
         {
-            return (status_code)IOLinker::readRegister(0x7f);
+            uint8_t code = IOLinker::readRegister(0x7f);
+            if (code == 0) {
+                return IOLinker::IOLINKER_ERROR_NOREPLY;
+            }
+            return (status_code)code;
         }
 
         /**

@@ -12,6 +12,14 @@ You can find the datasheet at http://jinvent.de/resources/iolinker_datasheet.pdf
 
 The iolinker library allows easy interfacing of the iolinker chips, on a PC, a Raspberry Pi or on an Arduino. It works with UART, SPI and I2C chips.
 
+## Install
+
+To use the library on a PC, simply switch into the iolinker library directory and use *make clean test* to compile and run the unit tests, or *make clean pcserial* to compile the serial test program.
+
+To use the library on an Arduino, download the IOLinker.zip file, and use Sketch -> Import Library -> Add Library. Then paste below code examples into your main program.
+
+To compile it on a Raspberry Pi, please install the WiringPi library first (http://wiringpi.com/download-and-install/). Also run *sudo apt-get install g++-4.8*. *make clean pi* in the iolinker library directory is enough to compile a test program afterwards.
+
 ## Example usage
 
 Note that wherever the examples use *Serial.println()*, the code may seem Arduino specific. But you could as well change the appropriate lines into a *printf()* statement for Raspberry or PC usage.
@@ -173,6 +181,15 @@ iolinker.setPinType(IOLinker::IOLINKER_PULLDOWN, 2); // P2 will be a pulldown in
    actual pin states yet! We activate them all at once now: */
 
 iolinker.syncBufferToOutputs(); // Simultaneous pin update!
+```
+
+### CLR: Clear PWM output and link settings for pins
+
+If you want to turn PWM or pin links back off for a pin and reuse it for something else, use the *iolinker.clearPinFunctions(firstpin, lastpin)* method.
+
+```c++
+iolinker.clearPinFunctions(1); // Reset settings for P1
+iolinker.clearPinFunctions(2, 10); // Reset settings for P2 to P10
 ```
 
 ### Data safety: Checksums and status codes
