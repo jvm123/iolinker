@@ -23,6 +23,9 @@ unittest: $(OBJS_unittest)
 test: unittest
 	./iolinker_unittest
 
+pi: $(OBJS_pi)
+	$(CXX) $(LDFLAGS) -o iolinker_pi $(OBJS_pi) $(LDLIBS) -lwiringPi
+
 pcserial: $(OBJS_pcserial)
 	$(CXX) $(LDFLAGS) -o iolinker_pcserial $(OBJS_pcserial) $(LDLIBS) 
 

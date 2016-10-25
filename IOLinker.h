@@ -221,11 +221,11 @@ class IOLinker {
         } status_code;
         
         /**
-         * @brief Retrieve the return status code of last reply
+         * @brief Retrieve the return status code of last write operation
          */
         inline status_code statusCode(void)
         {
-            return status;
+            return (status_code)IOLinker::readRegister(0x7f);
         }
 
         /**
@@ -234,8 +234,7 @@ class IOLinker {
          */
         inline bool available(void)
         {
-            version();
-            return (statusCode() == IOLINKER_STATUS_SUCCESS);
+            return (version() != 0);
         }
 
 
@@ -296,6 +295,12 @@ class IOLinker {
          */
         void setPinType(pin_types type, uint16_t pin_start,
                 uint16_t pin_end = 0);
+        
+        /**
+         * @brief REA command: Read register
+         * @param addr Register address
+         */
+        uint8_t readRegister(uint8_t addr);
 
         /**
          * @brief REA command: Read input state
@@ -406,6 +411,14 @@ class IOLinker {
         void pwmPeriod(uint8_t per);
 
         /**
+         * @brief CLR command: Clear special functions (PWM output, pin
+         *      links) for pin range
+         * @param pin_start First pin to update
+         * @param pin_end Last pin to update, or 0 if only one is to be changed
+         */
+        void clearPinFunctions(uint16_t pin_start, uint16_t pin_end = 0);
+
+        /**
          * @brief RST command: Reset volatile memory
          *
          * The software reset command will return the device to its default
@@ -466,9 +479,9 @@ class IOLinker {
             IOLINKER_BITMASK_PIN_ADDR = 0x7ff, /*!< I(nvert), V(irtual) and 10 pin
                                                     number bits make up the 12 bit pin
                                                     address */
-            IOLINKER_REPLY_MAXMETA_BYTECOUNT = 4, /*!< Meta byte count in replies,
+            IOLINKER_REPLY_MAXMETA_BYTECOUNT = 3, /*!< Max meta byte count in replies,
                                                        address byte included */
-            IOLINKER_REPLY_META_BYTECOUNT = 2, /*!< Meta byte count in replies that
+            IOLINKER_REPLY_META_BYTECOUNT = 1, /*!< Meta byte count in replies that
                                                     is always there */
             IOLINKER_BITMASK_PIN_ADDRESS_VIRT = (1 << 11), /*!< Virtual pin bit */
             IOLINKER_BITMASK_PIN_ADDRESS_INV = (1 << 10), /*!< Invert pin state
@@ -487,9 +500,6 @@ class IOLinker {
             IOLINKER_VIRTUAL_CLK256 = (0x09 | IOLINKER_BITMASK_PIN_ADDRESS_VIRT),
         };
 
-        status_code status = IOLINKER_STATUS_UNDEFINED; /*!< Return status of the last
-                                                             command sent to IOLinker
-                                                             chip */
         uint8_t __crc = 0; /*!< CRC of the message currently being
                                 constructed */
         uint8_t target_addr = IOLINKER_TARGET_FIRST; /*!< Current target address */
@@ -603,7 +613,7 @@ class IOLinker {
                 return target_addr;
             }
 
-            if (len < 2) {
+            if (len < 1) {
                 return 0;
             }
             return buf[1];
@@ -618,10 +628,10 @@ class IOLinker {
          */
         inline uint8_t argByte(uint8_t *buf, uint8_t len, uint8_t i)
         {
-            if (len < (1 + addrByteCount() + i)) {
+            if (len < (addrByteCount() + i)) {
                 return 0;
             }
-            return buf[1 + addrByteCount() + i];
+            return buf[addrByteCount() + i];
         }
         
         /**
@@ -677,6 +687,7 @@ class IOLinker {
             IOLINKER_CMD_LNK = 0x04,
             IOLINKER_CMD_PWM = 0x05,
             IOLINKER_CMD_PER = 0x06,
+            IOLINKER_CMD_CLR = 0x0a,
             IOLINKER_CMD_RST = 0x0f,
         } cmd_t;
 
@@ -702,16 +713,15 @@ class IOLinker {
         }
         
         /**
-         * @brief Read reply of the given max length into the buffer,
-         *      verify CRC if applicable, and save status code for the
-         *      statusCode() function.
+         * @brief Finish message and read reply of the given max length into
+         *      the buffer, verify CRC if applicable, and save status code for
+         *      the statusCode() function.
          * @param buf String buffer to write into, with at least
          *       optionalMetaByteCount() + REPLY_META_BYTECOUNT bytes
          * @param len String length
-         * @return Returns false and set status code to IOLINKER_ERROR_CRC on
-         *      CRC failure or no received reply, otherwise returns true.
+         * @return Returns status code
          */
-        bool readReply(uint8_t *buf, uint8_t len);
+        status_code finishAndReadReply(uint8_t *buf = NULL, uint8_t len = 0);
 
         /* Reset CRC and write out command +
                                      address byte, if applicable */
