@@ -1,25 +1,30 @@
 CC=gcc
 CXX=g++-4.8
 RM=rm -f
-CPPFLAGS=-std=gnu++11 -g # $(shell root-config --cflags) -lm
-LDFLAGS=-g #$(shell root-config --ldflags) -lboost_unit_test_framework -lm
+CPPFLAGS=-std=gnu++11 -g -DWIRINGPI # $(shell root-config --cflags) -lm
+LDFLAGS=-g -DWIRINGPI -lwiringPi #$(shell root-config --ldflags) -lboost_unit_test_framework -lm
 LDLIBS=#$(shell root-config --libs)
 
 SRCS=IOLinker.cpp
 SRCS_unittest=$(SRCS) wiringSerial.cpp iolinker_unittest.cpp
 SRCS_pcserial=$(SRCS) wiringSerial.cpp iolinker_pcserial.cpp
+SRCS_pi=$(SRCS) iolinker_pi.cpp
 
 OBJS=$(subst .cpp,.o,$(SRCS))
 OBJS_unittest=$(subst .cpp,.o,$(SRCS_unittest))
 OBJS_pcserial=$(subst .cpp,.o,$(SRCS_pcserial))
+OBJS_pi=$(subst .cpp,.o,$(SRCS_pi))
 
-all: unittest
+all: pi
 
 unittest: $(OBJS_unittest)
 	$(CXX) $(LDFLAGS) -o iolinker_unittest $(OBJS_unittest) $(LDLIBS) 
 
 test: unittest
 	./iolinker_unittest
+
+pi: $(OBJS_pi)
+	$(CXX) $(LDFLAGS) -o iolinker_pi $(OBJS_pi) $(LDLIBS)
 
 pcserial: $(OBJS_pcserial)
 	$(CXX) $(LDFLAGS) -o iolinker_pcserial $(OBJS_pcserial) $(LDLIBS) 

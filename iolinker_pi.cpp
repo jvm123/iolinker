@@ -18,13 +18,18 @@
 #include <math.h>
 #include <algorithm>
 #include "IOLinker.h"
+#include <wiringPi.h>
 
 int main(void)
 {
+    wiringPiSetupSys();
+
     /* Initialize class */
     IOLinker iolinker;
 
-    iolinker.beginSerial();
+    iolinker.beginSPI(0);
+    //iolinker.beginI2C();
+    //iolinker.beginSerial("/dev/ttyAMA0");
     iolinker.targetAddress(1);
     iolinker.setOutput(true, 4); // P4 is high
 

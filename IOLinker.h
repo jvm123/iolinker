@@ -82,7 +82,7 @@ class IOLinker {
 #endif
 
 #ifdef WIRINGPI
-#define __IOLINKER_SPI_CLK (32000000UL)
+#define __IOLINKER_SPI_CLK (3200000UL)
         
         /**
          * @brief Setup SPI master
@@ -172,7 +172,7 @@ class IOLinker {
         inline void targetAddress(uint8_t addr)
         {
 #ifdef WIRINGPI
-            if (interface_mode == I2C && target_addr != addr) {
+            if (interface_mode == IOLINKER_I2C && target_addr != addr) {
                 interface_fd = wiringPiI2CSetup(addr);
             }
 #endif

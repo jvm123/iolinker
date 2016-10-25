@@ -14,7 +14,13 @@
 #include "IOLinker.h"
 #include <string.h>
 
-#ifdef __PC
+#ifdef WIRINGPI
+#include <wiringPi.h>
+#include <wiringPiSPI.h>
+#include <wiringPiI2C.h>
+#endif
+
+#if defined(__PC) || defined(WIRINGPI)
 #include <unistd.h>
 #elif defined(ARDUINO)
 #include <Stream.h>
@@ -322,7 +328,11 @@ IOLinker::status_code IOLinker::finishAndReadReply(uint8_t *s, uint8_t len)
        
         for (int timeout = 10; !serialDataAvail(interface_fd)
                 && timeout > 0; timeout--) {
+#ifdef __PC
             usleep(1);
+#else
+            delayMicroseconds(1);
+#endif
         }
 
         if (serialDataAvail(interface_fd)) {
@@ -405,7 +415,7 @@ void IOLinker::writeMsg(uint8_t *s, uint8_t len)
             return;
         }
         
-        writeMsg(interface_fd, s, len);
+        write(interface_fd, s, len);
     }
 #elif defined(ARDUINO)
     if (interface_mode == IOLINKER_I2C) {

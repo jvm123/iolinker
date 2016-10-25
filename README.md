@@ -18,7 +18,7 @@ To use the library on a PC, simply switch into the iolinker library directory an
 
 To use the library on an Arduino, download the IOLinker.zip file, and use Sketch -> Import Library -> Add Library. Then paste below code examples into your main program.
 
-To compile it on a Raspberry Pi, please install the WiringPi library first (http://wiringpi.com/download-and-install/). Also run *sudo apt-get install g++-4.8*. *make clean pi* in the iolinker library directory is enough to compile a test program afterwards.
+To compile it on a Raspberry Pi, please install the WiringPi library first (http://wiringpi.com/download-and-install/). Also run *sudo apt-get install g++-4.8*. *make clean pi* in the iolinker library directory is enough to compile a test program afterwards. Run it with *sudo ./iolinker_pi*.
 
 ## Example usage
 
@@ -29,7 +29,7 @@ Note that wherever the examples use *Serial.println()*, the code may seem Arduin
 Setting up the serial interface on a Raspberry or PC, to communicate with an UART iolinker chip:
 
 ```c++
-iolinker.beginSerial("/dev/ttyACM0"); // or ttyUSB0 or the like
+iolinker.beginSerial("/dev/ttyAMA0"); // or ttyUSB0 or the like
 ```
 
 Setting up the SPI interface on a Raspberry, to communicate with an SPI iolinker chip:
