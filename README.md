@@ -22,7 +22,7 @@ To compile it on a Raspberry Pi, please install the WiringPi library first (http
 
 ## Example usage
 
-Note that wherever the examples use *Serial.println()*, the code may seem Arduino specific. But you could as well change the appropriate lines into a *printf()* statement for Raspberry or PC usage.
+Note that wherever the examples use *Serial.println()*, the code may seem Arduino specific. But you could as well change the appropriate lines into a *printf()* statement for Raspberry or PC usage. The iolinker specific code is universal.
 
 ### Initialization on PC and Raspberry
 
@@ -90,10 +90,12 @@ Serial.println(iolinker.firstAddress(), DEC);
 By default, all pins on the iolinker chip are Tristate (open collector) inputs. Change those easily:
 
 ```c++
-iolinker.setPinType(IOLinker::IOLINKER_PULLDOWN, 1); // P1 is a pulldown input
-iolinker.setPinType(IOLinker::IOLINKER_PULLUP, 2); // P2 is a pullup input
-iolinker.setPinType(IOLinker::IOLINKER_INPUT, 3); // P3 is a tristate input
-iolinker.setPinType(IOLinker::IOLINKER_OUTPUT, 4, 64); // P4 to P64 are outputs
+iolinker.setPinType(IOLinker::IOLINKER_OUTPUT, 1); // P1 is an output
+iolinker.setPinType(IOLinker::IOLINKER_OUTPUT, 2); // P2 is an output
+iolinker.setPinType(IOLinker::IOLINKER_PULLUP, 3); // P3 is a pullup input
+iolinker.setPinType(IOLinker::IOLINKER_INPUT, 4); // P4 is a tristate input
+iolinker.setPinType(IOLinker::IOLINKER_PULLDOWN, 5); // P5 is a pulldown input
+iolinker.setPinType(IOLinker::IOLINKER_OUTPUT, 6, 64); // P6 to P64 are outputs
 ```
 
 Outputs are low, until their output value is changed with the SET command.
@@ -103,8 +105,8 @@ Outputs are low, until their output value is changed with the SET command.
 ```c++
 // Don't forget to set pin types first, see TYP section.
 
-iolinker.setOutput(true, 4); // P4 is high
-iolinker.setOutput(false, 5); // P5 is low
+iolinker.setOutput(true, 1); // P1 is high
+iolinker.setOutput(false, 2); // P2 is low
 iolinker.setOutput(true, 6, 48); // P6 to P48 are high
 
 uint8_t s[] = { 0x00, 0xff };
@@ -118,10 +120,10 @@ The *readInput()* method allows to determine pin states. On an Arduino this woul
 ```c++
 // Don't forget to set pin types first, see TYP section.
 
-if (iolinker.readInput(1)) {
-    Serial.println("P1 is high!");
+if (iolinker.readInput(3)) {
+    Serial.println("P3 is high!");
 } else {
-    Serial.println("P1 is low!");
+    Serial.println("P3 is low!");
 }
 ```
 
@@ -132,10 +134,10 @@ Link two pins, and configure your circuit dynamically! The pin link allows to tr
 ```c++
 // Don't forget to set pin types first, see TYP section.
 
-iolinker.link(1, 7); // P7 outputs all values from P1
-iolinker.link(1, iolinker.invert(8)); // P8 outputs all values from
-                                      // P1's inverted pin state
-iolinker.link(1, 9, 11); // P9 to 11 output all values from P1
+iolinker.link(3, 1); // P1 outputs all values from P3
+iolinker.link(iolinker.invert(3), 2); // P2 outputs all values from
+                                      // P3's inverted pin state
+iolinker.link(3, 9, 11); // P9 to 11 output all values from P3
 iolinker.link(IOLinker::IOLINKER_VIRTUAL_CLK256, 12); // P12 outputs the internal iolinker clock divided by 256
 ```
 
@@ -225,6 +227,62 @@ select (iolinker.statusCode()) {
 }
 ```
 
+### Listen for IO interrupts
+
+The simplest way to listen for interrupts on the iolinker input pins goes like this:
+
+```c++
+void setup() {
+    // INT pin connected to Arduino pin 9
+    iolinker.registerInterrupt(9, my_callback);
+}
+
+void my_callback() {
+    Serial.println("One of the input pins just switched!");
+}
+```
+
+A more elaborate approach with some debouncing would use the interrupt only to record events, and let the main program handle them periodically, such as this Arduino code:
+
+```c++
+#include <IOLinker.h>
+
+IOLinker iolinker;
+volatile uint8_t interrupt_event = 0;
+
+void my_callback() {
+    interrupt_event = 1;
+}
+
+void setup() {
+    Serial.begin(9600);
+    while (!Serial) {
+        ; // wait for serial port to connect. Needed for Leonardo only
+    }
+    
+    iolinker.beginSPI(); // Use Serial1 on Arduino Leonardo!
+    iolinker.setPinType(IOLinker::IOLINKER_PULLUP, 3); // P3 is our input
+    iolinker.registerInterrupt(9, my_callback);
+
+    Serial.println("Now listening for pin interrupts on P3!");
+}
+
+void loop() {
+    if (interrupt_event != 0) {
+        Serial.println("New interrupt event!");
+        Serial.print("My favorite pin is ");
+        if (iolinker.readInput(3)) {
+            Serial.println("high.");
+        } else {
+            Serial.println("low.");
+        }
+
+        delay(300); // debounce button
+        interrupt_event = 0;
+    }
+}
+```
+
 ### Reset chip state
 
 ```c++
@@ -234,5 +292,6 @@ iolinker.reset();
 ## Dependencies
 
 * Raspberry
-  * WiringPi (http://wiringpi.com/download-and-install/)
+  * Installed WiringPi (http://wiringpi.com/download-and-install/)
+  * g++-4.8 (apt-get install g++-4.8)
 
