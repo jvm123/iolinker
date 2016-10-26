@@ -49,7 +49,19 @@ void IOLinker::beginI2C(void)
     interface_fd = wiringPiI2CSetup(target_addr);
 }
 
+void IOLinker::registerInterrupt(uint8_t intpin, IOLinker::callback_t callback)
+{
+    pinMode(intpin, INPUT);
+    pullUpDnControl(intpin, PUD_UP);
+    wiringPiISR(intpin, INT_EDGE_FALLING, callback);
+}
+
 #elif defined(ARDUINO)
+void IOLinker::registerInterrupt(uint8_t intpin, IOLinker::callback_t callback)
+{
+    pinMode(intpin, INPUT_PULLUP);
+    attachInterrupt(digitalPinToInterrupt(intpin), callback, FALLING);
+}
 #endif
 
 

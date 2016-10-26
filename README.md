@@ -18,7 +18,7 @@ To use the library on a PC, simply switch into the iolinker library directory an
 
 To use the library on an Arduino, download the IOLinker.zip file, and use Sketch -> Import Library -> Add Library. Then paste below code examples into your main program.
 
-To compile it on a Raspberry Pi, please install the WiringPi library first (http://wiringpi.com/download-and-install/). Also run *sudo apt-get install g++-4.8*. *make clean pi* in the iolinker library directory is enough to compile a test program afterwards. Run it with *sudo ./iolinker_pi*.
+To compile it on a Raspberry Pi, please install the WiringPi library first (http://wiringpi.com/download-and-install/). Also run *sudo apt-get install g++-4.8*. *make -f Makefile.pi clean pi* in the iolinker library directory is enough to compile a test program afterwards. Run it with *sudo ./iolinker_pi*.
 
 ## Example usage
 
@@ -41,6 +41,8 @@ Setting up the I2C interface, for I2C chips:
 ```c++
 iolinker.beginI2C();
 ```
+
+Please make sure to run the wiringPi setup functions, e.g. *wiringPiSetup()*, before you use the iolinker library on the Raspberry.
 
 ### Initialization on an Arduino:
 

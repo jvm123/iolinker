@@ -42,6 +42,11 @@ class IOLinker {
          */
         typedef uint8_t (*testfunc_t)(unsigned char *s, uint8_t len);
         
+        /**
+         * @brief Function type for callbacks in general
+         */
+        typedef void (*callback_t)(void);
+        
     private:
         /**
          * @brief Communication interface identifier
@@ -203,6 +208,16 @@ class IOLinker {
                 cmdbyte &= ~(IOLINKER_BITMASK_CRC_BIT);
             }
         }
+        
+#if defined(WIRINGPI) || defined(ARDUINO)
+        /**
+         * @brief Register callback function for interrupt events
+         * @param intpin The pin you connected the iolinker INT pin with
+         * @param callback Function to call when an iolinker interrupt
+         *      occurs
+         */
+        void registerInterrupt(uint8_t intpin, callback_t callback);
+#endif
 
         /** Status codes **/
 
