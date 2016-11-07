@@ -70,6 +70,41 @@ void IOLinker::registerInterrupt(uint8_t intpin)
 
 /** Messages **/
         
+bool IOLinker::sendBuf(uint8_t *msglist, uint16_t size)
+{
+    for (uint16_t i = 0; i < size; i++) {
+        /* Seek to first command */
+        if (!cmdBitOn(*msglist)) {
+            msglist++;
+            continue;
+        }
+
+        uint8_t msglength = 0, replyargcount = 0;
+
+        /* Find next command to derive message length */
+        for (; msglength < size; msglength++) {
+            if (cmdBitOn(msglist[1 + msglength])) {
+                break;
+            }
+        }
+
+        /* We don't execute read messages. They have no place here. */
+        if (!rwBitOn(*msglist)) {
+            writeCmd((IOLinker::cmd_t)*msglist);
+            writeMsg(msglist + 1, msglength);
+            writeCRC();
+            finishAndReadReply();
+        }
+
+        /* Jump to next command */
+        msglist += msglength;
+        i += msglength;
+        size -= msglength + 1;
+    }
+
+    return true;
+}
+        
 uint16_t IOLinker::version(void)
 {
     uint8_t buf[2 + IOLINKER_REPLY_MAXMETA_BYTECOUNT];

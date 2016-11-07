@@ -296,6 +296,26 @@ void loop() {
 iolinker.reset();
 ```
 
+### Storing long command sequences in string buffer
+
+If you want to save long command sequences more efficiently, e.g. to read a
+configuration from flash on boot, and to then write it out, the
+*sendBuf(buf, len)* method may be of use to you. The passed byte string
+contains only command bytes and arguments. The method takes care of adding
+target address and CRC and writes out the messages in the string one by one.
+
+```c++
+uint8_t iolinker_config[] = {
+    0x82, 0x00, 0x01, 0x00, 0x0f, 0x03, /* TYP P1 to P15 as output */
+    0x82, 0x00, 0x10, 0x00, 0x1f, 0x00, /* TYP P16 to P33 as input */
+    0x83, 0x00, 0x01, 0x00, 0x07, 0x7f, /* SET P1 to P7 high */
+    0x84, 0x00, 0x1f, 0x00, 0x00, 0x00, 0x0f, /* LNK P16 to P15 */
+};
+
+iolinker.targetAddress(1);
+iolinker.sendBuf(iolinker_config, sizeof(iolinker_config));
+```
+
 ## Dependencies
 
 * Raspberry

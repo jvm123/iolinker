@@ -116,6 +116,33 @@ void test_crc(void)
     //assert(IOLinker.statusCode() == IOLinker::IOLINKER_ERROR_CRC);
 }
 
+void testmsg_sendbuf(void)
+{
+    unsigned char sentout[] = {
+        0x81, IOLinker::IOLINKER_TARGET_FIRST, 0x01, 0x02, 0x03,
+        0x91, IOLinker::IOLINKER_TARGET_FIRST, 0x01, 0x02 },
+         sendbuf[] = { 0x05,
+            0x81, 0x01, 0x02, 0x03,
+            0x91, 0x01, 0x02 };
+
+    /* Test version message with no reply */
+    IOLinker.beginTest((IOLinker::testfunc_t)IOLinker_sim,
+            (uint8_t *)buf0, sizeof(buf0));
+    sim_mode = SIM_MODE_NOTTHERE;
+
+    IOLinker.targetAddress(IOLinker::IOLINKER_TARGET_FIRST);
+    IOLinker.buffer(false);
+    IOLinker.crc(false);
+
+    expectedmsg_len = sizeof(sentout);
+    strncpy((char *)buf_expectedmsg, (const char *)sentout, expectedmsg_len);
+
+    sim_success = 0;
+    IOLinker.sendBuf(sendbuf, sizeof(sendbuf));
+    assert(sim_success == 1);
+    //assert(IOLinker.statusCode() == IOLinker::IOLINKER_ERROR_NOREPLY);
+}
+
 void testmsg_ver(void)
 {
     unsigned char msg1[] = { 0xC1, IOLinker::IOLINKER_TARGET_ALL },
@@ -573,6 +600,7 @@ int main(void)
 
     /* Test messages */
     test_crc();
+    testmsg_sendbuf();
     testmsg_ver();
     testmsg_syn();
     testmsg_trg();

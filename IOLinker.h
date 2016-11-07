@@ -274,6 +274,17 @@ class IOLinker {
         /** Messages **/
 
         /**
+         * @brief Send out messages in a byte string, but mix in current
+         *      settings and verify successful execution of all commands
+         * @param msglist Byte string with a message byte followed by the
+         *      message parameters followed by the next message byte and so on
+         * @param size Length of the byte string
+         * @return Returns true on success return code of ALL commands
+         *      executed
+         */
+        bool sendBuf(uint8_t *msglist, uint16_t size);
+
+        /**
          * @brief VER command: Retrieve chip version
          * @return Returns the received chip version byte, or 0 if no valid
          *      reply was received
