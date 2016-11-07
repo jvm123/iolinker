@@ -229,19 +229,21 @@ select (iolinker.statusCode()) {
 
 ### Listen for IO interrupts
 
-The *iolinker.registerInterrupt(pin, callback_function)* method is available both for Arduino and for Raspberry. The pin number is that on which you connected the INT line from the iolinker chip. The callback function takes no parameters and returns void.
+The *iolinker.registerInterrupt(pin)* method on Arduino activates the pin change interrupt for the given pin number. The pin number is that on which you connected the INT line from the iolinker chip.
 
-The simplest way to listen for interrupts on the iolinker input pins goes like this:
+The *iolinker.registerInterrupt(pin, callback_function)* method on Raspberry activates the pin change interrupt and calls the function pointer provided on pin change. The callback function takes no parameters and returns void.
+
+The simplest way to listen for interrupts on the iolinker input pins on an Arduino goes like this:
 
 ```c++
 void setup() {
     // ...
 
     // INT pin connected to Arduino pin 9
-    iolinker.registerInterrupt(9, my_callback);
+    iolinker.registerInterrupt(9);
 }
 
-void my_callback() {
+ISR (PCINT0_vect) {
     Serial.println("One of the input pins just switched!");
 }
 ```
@@ -254,7 +256,7 @@ A more elaborate approach with some debouncing would use the interrupt only to r
 IOLinker iolinker;
 volatile uint8_t interrupt_event = 0;
 
-void my_callback() {
+ISR (PCINT0_vect) {
     interrupt_event = 1;
 }
 
@@ -267,7 +269,7 @@ void setup() {
     iolinker.beginSPI(); // Connect to SPI chip
     iolinker.targetAddress(1); // Address 1
     iolinker.setPinType(IOLinker::IOLINKER_PULLUP, 3); // P3 is our input
-    iolinker.registerInterrupt(9, my_callback); // INT is connected to Arduino pin 9
+    iolinker.registerInterrupt(9); // INT is connected to Arduino pin 9
 
     Serial.println("Now listening for pin interrupts on P3!");
 }

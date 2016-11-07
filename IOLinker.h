@@ -209,7 +209,7 @@ class IOLinker {
             }
         }
         
-#if defined(WIRINGPI) || defined(ARDUINO)
+#if defined(WIRINGPI)
         /**
          * @brief Register callback function for interrupt events
          * @param intpin The pin you connected the iolinker INT pin with
@@ -217,6 +217,20 @@ class IOLinker {
          *      occurs
          */
         void registerInterrupt(uint8_t intpin, callback_t callback);
+#elif defined(ARDUINO)
+        /**
+         * @brief Register callback function for interrupt events
+         * @param intpin The pin you connected the iolinker INT pin with
+         * 
+         * Define your interrupt routine e.g. for pin 9 in a
+         * ISR (PCINT0_vect) { ... } block.
+         * The ISR name needs to be changed depending on the
+         * interrupt pin number:
+         * ISR (PCINT0_vect) pin change interrupt for D8 to D13
+         * ISR (PCINT1_vect) pin change interrupt for A0 to A5
+         * ISR (PCINT2_vect) pin change interrupt for D0 to D7
+         */
+        void registerInterrupt(uint8_t intpin);
 #endif
 
         /** Status codes **/

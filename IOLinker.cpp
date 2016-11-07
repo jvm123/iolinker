@@ -57,10 +57,13 @@ void IOLinker::registerInterrupt(uint8_t intpin, IOLinker::callback_t callback)
 }
 
 #elif defined(ARDUINO)
-void IOLinker::registerInterrupt(uint8_t intpin, IOLinker::callback_t callback)
+void IOLinker::registerInterrupt(uint8_t intpin)
 {
     pinMode(intpin, INPUT_PULLUP);
-    attachInterrupt(digitalPinToInterrupt(intpin), callback, FALLING);
+    //attachInterrupt(digitalPinToInterrupt(intpin), callback, FALLING);
+   *digitalPinToPCMSK(intpin) |= bit (digitalPinToPCMSKbit(intpin));  // enable pin
+    PCIFR  |= bit (digitalPinToPCICRbit(intpin)); // clear any outstanding interrupt
+    PCICR  |= bit (digitalPinToPCICRbit(intpin)); // enable interrupt for the group 
 }
 #endif
 
