@@ -119,8 +119,8 @@ uint16_t IOLinker::version(void)
 
 void IOLinker::setPinType(pin_types type, uint16_t pin_start, uint16_t pin_end)
 {
-    uint8_t buf[] = { argData(pin_start >> 7), argData(pin_start),
-            argData(pin_end >> 7), argData(pin_end),
+    uint8_t buf[] = { argData(pin_start), argData(pin_start >> 7),
+            argData(pin_end), argData(pin_end >> 7),
             argData(type) };
     writeCmd(IOLINKER_CMD_TYP);
     writeMsg(buf, sizeof(buf));
@@ -144,7 +144,7 @@ uint8_t IOLinker::readRegister(uint8_t addr)
 
 bool IOLinker::readInput(uint16_t pin)
 {
-    uint8_t tx[] = { argData(pin >> 7), argData(pin), 0, 0 };
+    uint8_t tx[] = { argData(pin), argData(pin >> 7), 0, 0 };
     uint8_t buf[1 + IOLINKER_REPLY_MAXMETA_BYTECOUNT];
     writeCmd(IOLINKER_CMD_REA);
     writeMsg(tx, sizeof(tx));
@@ -169,8 +169,8 @@ void IOLinker::readInput(uint8_t *s, uint8_t len, uint16_t pin_start,
         len = bytecount;
     }
 
-    uint8_t tx[] = { argData(pin_start >> 7), argData(pin_start),
-            argData(pin_end >> 7), argData(pin_end) };
+    uint8_t tx[] = { argData(pin_start), argData(pin_start >> 7),
+            argData(pin_end), argData(pin_end >> 7) };
     writeCmd(IOLINKER_CMD_REA);
     writeMsg(tx, sizeof(tx));
     writeCRC();
@@ -204,8 +204,8 @@ void IOLinker::setOutput(bool state, uint16_t pin_start, uint16_t pin_end)
 
     uint8_t bytecount = (uint8_t)(
             (pin_distance(pin_start, pin_end) + 7.5) / 7);
-    uint8_t buf[] = { argData(pin_start >> 7), argData(pin_start),
-            argData(pin_end >> 7), argData(pin_end) };
+    uint8_t buf[] = { argData(pin_start), argData(pin_start >> 7),
+            argData(pin_end), argData(pin_end >> 7) };
     writeCmd(IOLINKER_CMD_SET);
     writeMsg(buf, sizeof(buf));
     
@@ -227,8 +227,8 @@ void IOLinker::setOutput(uint8_t *s, uint8_t len, uint16_t pin_start,
 
     uint8_t bytecount = max(1,
             (uint8_t)((pin_distance(pin_start, pin_end) + 7.5) / 7));
-    uint8_t buf[4] = { argData(pin_start >> 7), argData(pin_start),
-            argData(pin_end >> 7), argData(pin_end) };
+    uint8_t buf[4] = { argData(pin_start), argData(pin_start >> 7),
+            argData(pin_end), argData(pin_end >> 7) };
     writeCmd(IOLINKER_CMD_SET);
     writeMsg(buf, sizeof(buf));
     
@@ -270,9 +270,9 @@ void IOLinker::syncBufferToOutputs(void)
 
 void IOLinker::link(uint16_t target_pin, uint16_t pin_start, uint16_t pin_end)
 {
-    uint8_t buf[] = { argData(pin_start >> 7), argData(pin_start),
-            argData(pin_end >> 7), argData(pin_end),
-            argData(target_pin >> 7), argData(target_pin), };
+    uint8_t buf[] = { argData(pin_start), argData(pin_start >> 7),
+            argData(pin_end), argData(pin_end> >> 7),
+            argData(target_pin), argData(target_pin >> 7), };
     writeCmd(IOLINKER_CMD_LNK);
     writeMsg(buf, sizeof(buf));
     writeCRC();
@@ -281,8 +281,8 @@ void IOLinker::link(uint16_t target_pin, uint16_t pin_start, uint16_t pin_end)
 
 void IOLinker::pwm(uint8_t pwm_r, uint16_t pin_start, uint16_t pin_end)
 {
-    uint8_t buf[] = { argData(pin_start >> 7), argData(pin_start),
-            argData(pin_end >> 7), argData(pin_end),
+    uint8_t buf[] = { argData(pin_start), argData(pin_start >> 7),
+            argData(pin_end), argData(pin_end >> 7),
             argData(pwm_r), };
     writeCmd(IOLINKER_CMD_PWM);
     writeMsg(buf, sizeof(buf));
@@ -301,8 +301,8 @@ void IOLinker::pwmPeriod(uint8_t per)
 
 void IOLinker::clearPinFunctions(uint16_t pin_start, uint16_t pin_end)
 {
-    uint8_t buf[] = { argData(pin_start >> 7), argData(pin_start),
-            argData(pin_end >> 7), argData(pin_end) };
+    uint8_t buf[] = { argData(pin_start), argData(pin_start >> 7),
+            argData(pin_end), argData(pin_end >> 7) };
     writeCmd(IOLINKER_CMD_CLR);
     writeMsg(buf, sizeof(buf));
     writeCRC();
