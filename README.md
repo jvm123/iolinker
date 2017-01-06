@@ -4,7 +4,7 @@ Web: http://jinvent.de/iolinker
 
 ## The iolinker Chips
 
-Every iolinker chip functions as a dynamically configurable IO matrix. Its main functionality, besides IO extension, is to dynamically set up a matrix of GPIO connections, that allow direct (or inverted) pass-through of high-frequency signals. Circuits can thereby be configured and programmed on the fly. There are UART / SPI / I2C versions that allow for easy integration of up to 127 chips connected in parallel. Pro versions also allow for PWM signal output.
+Every iolinker chip functions as a dynamically configurable IO matrix. Its main functionality, besides IO extension, is to dynamically set up a matrix of GPIO connections, that allow direct (or inverted) pass-through of high-frequency signals. Circuits can thereby be configured and programmed on the fly. There are UART / SPI / I2C versions that allow for easy integration of up to 127 chips connected in parallel. PWM signal output is possible as well.
 
 You can find the datasheet at http://jinvent.de/resources/iolinker_datasheet.pdf.
 
