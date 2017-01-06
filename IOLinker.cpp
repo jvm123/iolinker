@@ -160,7 +160,7 @@ void IOLinker::readInput(uint8_t *s, uint8_t len, uint16_t pin_start,
         uint16_t pin_end)
 {
     if (pin_end < pin_start) {
-        pin_end = pin_start;
+        pin_end = 0;
     }
 
     uint8_t bytecount = (uint8_t)(
@@ -199,7 +199,7 @@ void IOLinker::readInput(uint8_t *s, uint8_t len, uint16_t pin_start,
 void IOLinker::setOutput(bool state, uint16_t pin_start, uint16_t pin_end)
 {
     if (pin_end < pin_start) {
-        pin_end = pin_start;
+        pin_end = 0;
     }
 
     uint8_t bytecount = (uint8_t)(
@@ -222,7 +222,7 @@ void IOLinker::setOutput(uint8_t *s, uint8_t len, uint16_t pin_start,
         uint16_t pin_end)
 {
     if (pin_end < pin_start) {
-        pin_end = pin_start;
+        pin_end = 0;
     }
 
     uint8_t bytecount = max(1,
