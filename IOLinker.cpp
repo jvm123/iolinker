@@ -521,7 +521,7 @@ void IOLinker::writeCmd(cmd_t cmd)
     /* Nothing to prepare for PC UART transmission */
 #endif
 
-    writeMsg(&cmdbyte, 1);
     writeMsg(&target_addr, 1);
+    writeMsg(&cmdbyte, 1);
 }
 
