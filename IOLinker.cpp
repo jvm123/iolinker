@@ -111,10 +111,10 @@ uint16_t IOLinker::version(void)
     writeCmd(IOLINKER_CMD_VER);
     writeCRC();
     if (finishAndReadReply(buf, 2 + optionalMetaByteCount() +
-                IOLINKER_REPLY_META_BYTECOUNT) != IOLINKER_STATUS_SUCCESS) {
+                IOLINKER_REPLY_META_BYTECOUNT) < 2) {
         return 0;
     }
-    return (argByte(buf, sizeof(buf), 1) << 8 | argByte(buf, sizeof(buf), 2));
+    return (argByte(buf, sizeof(buf), 0) << 8 | argByte(buf, sizeof(buf), 1));
 }
 
 void IOLinker::setPinType(pin_types type, uint16_t pin_start, uint16_t pin_end)
@@ -136,10 +136,10 @@ uint8_t IOLinker::readRegister(uint8_t addr)
     writeMsg(tx, sizeof(tx));
     writeCRC();
     if (finishAndReadReply(buf, 1 + optionalMetaByteCount() +
-                IOLINKER_REPLY_META_BYTECOUNT) != IOLINKER_STATUS_SUCCESS) {
+                IOLINKER_REPLY_META_BYTECOUNT) < sizeof(buf)) {
         return 0;
     }
-    return argByte(buf, sizeof(buf), 1);
+    return argByte(buf, sizeof(buf), 0);
 }
 
 bool IOLinker::readInput(uint16_t pin)
@@ -150,10 +150,10 @@ bool IOLinker::readInput(uint16_t pin)
     writeMsg(tx, sizeof(tx));
     writeCRC();
     if (finishAndReadReply(buf, 1 + optionalMetaByteCount() +
-                IOLINKER_REPLY_META_BYTECOUNT) != IOLINKER_STATUS_SUCCESS) {
-        return 0;
+                IOLINKER_REPLY_META_BYTECOUNT) < sizeof(buf)) {
+        return false;
     }
-    return ((argByte(buf, sizeof(buf), 1) >> 6) == 1);
+    return ((argByte(buf, sizeof(buf), 0) >> 6) == 1);
 }
 
 void IOLinker::readInput(uint8_t *s, uint8_t len, uint16_t pin_start,
@@ -176,15 +176,15 @@ void IOLinker::readInput(uint8_t *s, uint8_t len, uint16_t pin_start,
     writeCRC();
 
     if (finishAndReadReply(s, len + optionalMetaByteCount() +
-                IOLINKER_REPLY_META_BYTECOUNT) != IOLINKER_STATUS_SUCCESS) {
+                IOLINKER_REPLY_META_BYTECOUNT) < len) {
         return;
     }
-
+    
     uint8_t offset = 1, j = 0, lastbyte = 0;
 
     for (uint8_t i = 0; i < len; i++) {
-        uint8_t byte = (argByte(s, sizeof(s), 1 + j) << offset);
-        byte |= (argByte(s, sizeof(s), 2 + j) >> (7 - offset));
+        uint8_t byte = (argByte(s, sizeof(s), 0 + j) << offset);
+        byte |= (argByte(s, sizeof(s), 1 + j) >> (7 - offset));
 
         s[j] = byte;
 
@@ -271,7 +271,7 @@ void IOLinker::syncBufferToOutputs(void)
 void IOLinker::link(uint16_t target_pin, uint16_t pin_start, uint16_t pin_end)
 {
     uint8_t buf[] = { argData(pin_start), argData(pin_start >> 7),
-            argData(pin_end), argData(pin_end> >> 7),
+            argData(pin_end), argData(pin_end >> 7),
             argData(target_pin), argData(target_pin >> 7), };
     writeCmd(IOLINKER_CMD_LNK);
     writeMsg(buf, sizeof(buf));
@@ -327,18 +327,24 @@ uint16_t IOLinker::firstAddress(void)
         targetAddress(++addr);
     } while (!available() && addr < IOLINKER_TARGET_MAX);
 
-    return ((addr >= IOLINKER_TARGET_MAX) ? 128 : addr);
+    return ((addr > IOLINKER_TARGET_MAX) ? 128 : addr);
 }
 
 uint16_t IOLinker::chainLength(uint8_t start)
 {
     uint8_t len = 0;
+    uint8_t bak = target_addr;
     
     do {
         targetAddress(start + len);
         len++;
+        
+        if ((start + len) > IOLINKER_TARGET_MAX) {
+            break;
+        }
     } while (available());
-    
+
+    targetAddress(bak);
     return len - 1;
 }
 
@@ -362,7 +368,7 @@ uint8_t IOLinker::crc7(uint8_t *s, uint8_t len, uint8_t crc)
     return crc;
 }
 
-IOLinker::status_code IOLinker::finishAndReadReply(uint8_t *s, uint8_t len)
+uint8_t IOLinker::finishAndReadReply(uint8_t *s, uint8_t len)
 {
     int i = 0;
 
@@ -370,23 +376,29 @@ IOLinker::status_code IOLinker::finishAndReadReply(uint8_t *s, uint8_t len)
     if (interface_mode == IOLINKER_I2C || interface_mode == IOLINKER_SPI ||
             interface_mode == IOLINKER_UART) {
         if (interface_fd == -1) {
-            return IOLINKER_ERROR_INTERFACE;
+            return i;
         }
         if (len == 0 || s == NULL) {
-            return IOLINKER_STATUS_SUCCESS;
+            return i;
         }
        
-        for (int timeout = 10; !serialDataAvail(interface_fd)
-                && timeout > 0; timeout--) {
+        for (int timeout = 10; (!serialDataAvail(interface_fd)
+                && timeout > 0); timeout--) {
 #ifdef __PC
-            usleep(1);
+            usleep(100);
 #else
-            delayMicroseconds(1);
+            delayMicroseconds(100);
 #endif
         }
+#ifdef __PC
+        usleep(10000);
+#else
+        delayMicroseconds(10000);
+#endif
 
         if (serialDataAvail(interface_fd)) {
             i = read(interface_fd, s, len);
+            //printf("Got data of length %d! %x %x\n", i, s[0], s[1]);
             
             /*if (i < 0) {
                 i = 0;
@@ -413,6 +425,7 @@ IOLinker::status_code IOLinker::finishAndReadReply(uint8_t *s, uint8_t len)
             memset(s, '\0', len);
             SPI.transfer(s, len);
         }
+        i = len;
         SPI.endTransaction();
         digitalWrite(__IOLINKER_SPI_CS, HIGH); // unselect
     } else if (interface_mode == IOLINKER_UART) {
@@ -425,7 +438,7 @@ IOLinker::status_code IOLinker::finishAndReadReply(uint8_t *s, uint8_t len)
         i = interface_testfunc(interface_buf_reset,
                 interface_buf - interface_buf_reset);
 
-        /* Reply is in '*s', and is of length 'size' */
+        /* Reply is in '*s', and is of length 'i' */
         if (s != NULL && len > 0) {
             interface_buf = interface_buf_reset;
             strncpy((char *)s, (const char *)interface_buf, i);
@@ -433,12 +446,12 @@ IOLinker::status_code IOLinker::finishAndReadReply(uint8_t *s, uint8_t len)
     }
 
     if (len == 0 || s == NULL) {
-        return IOLINKER_STATUS_SUCCESS;
+        return i;
     }
 
     /* Verify length of return message */
     if (i < len || i < (2 + optionalMetaByteCount())) {
-        return IOLINKER_ERROR_NOREPLY;
+        return i;
     }
 
     /* Verify CRC */
@@ -446,11 +459,11 @@ IOLinker::status_code IOLinker::finishAndReadReply(uint8_t *s, uint8_t len)
         s[i - 1] <<= 1;
         
         if (crc7(s, i) != 0) {
-            return IOLINKER_ERROR_CRC;
+            return i;
         }
     }
 
-    return IOLINKER_STATUS_SUCCESS;
+    return i;
 }
 
 void IOLinker::writeMsg(uint8_t *s, uint8_t len)

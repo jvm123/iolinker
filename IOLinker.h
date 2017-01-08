@@ -164,9 +164,9 @@ class IOLinker {
          * @brief Node target addresses
          */
         typedef enum target_address {
-            IOLINKER_TARGET_ALL = 0x00, /*!< Target all chips simultaneously. Only
+            IOLINKER_TARGET_ALL = 0x7f, /*!< Target all chips simultaneously. Only
                                     supported in Pro versions. */
-            IOLINKER_TARGET_FIRST = 0x01,
+            IOLINKER_TARGET_FIRST = 0x00,
             IOLINKER_TARGET_MAX = 0x7f,
         } target_address;
 
@@ -299,7 +299,7 @@ class IOLinker {
          */
         inline uint16_t pinCount(uint16_t version)
         {
-            switch (argData(version)) {
+            switch ((argData(version) & 0x0f)) {
                 case 0:
                     return 14;
                 case 1:
@@ -310,15 +310,6 @@ class IOLinker {
                     return 192;
             }
             return 0;
-        }
-
-        /**
-         * @brief Derive pro version status from chip version byte
-         * @return Return true if it is a pro version
-         */
-        inline bool isProVersion(uint16_t version)
-        {
-            return ((version >> 14) == 1);
         }
 
         /**
@@ -523,9 +514,9 @@ class IOLinker {
             IOLINKER_BITMASK_PIN_ADDR = 0x7ff, /*!< I(nvert), V(irtual) and 10 pin
                                                     number bits make up the 12 bit pin
                                                     address */
-            IOLINKER_REPLY_MAXMETA_BYTECOUNT = 3, /*!< Max meta byte count in replies,
+            IOLINKER_REPLY_MAXMETA_BYTECOUNT = 0, /*!< Max meta byte count in replies,
                                                        address byte included */
-            IOLINKER_REPLY_META_BYTECOUNT = 1, /*!< Meta byte count in replies that
+            IOLINKER_REPLY_META_BYTECOUNT = 0, /*!< Meta byte count in replies that
                                                     is always there */
             IOLINKER_BITMASK_PIN_ADDRESS_VIRT = (1 << 11), /*!< Virtual pin bit */
             IOLINKER_BITMASK_PIN_ADDRESS_INV = (1 << 10), /*!< Invert pin state
@@ -623,13 +614,14 @@ class IOLinker {
         
         /**
          * @brief Determine the number of address bytes for the current
-         *      communication interface
+         *      communication interface in reply messages
          * @return Number of address bytes that is supposed to be contained
          *      in every message
          */
         inline uint8_t addrByteCount(void)
         {
-            return ((interface_mode == IOLINKER_I2C) ? 0 : 1);
+            return 0;
+            //return ((interface_mode == IOLINKER_I2C) ? 0 : 1);
         }
             
         /**
@@ -640,7 +632,8 @@ class IOLinker {
          */
         inline uint8_t optionalMetaByteCount(void)
         {
-            return addrByteCount() + ((crcBitOn(cmdbyte)) ? 1 : 0);
+            return 0;
+            //return addrByteCount() + ((crcBitOn(cmdbyte)) ? 1 : 0);
         }
         
         /**
@@ -758,14 +751,13 @@ class IOLinker {
         
         /**
          * @brief Finish message and read reply of the given max length into
-         *      the buffer, verify CRC if applicable, and save status code for
-         *      the statusCode() function.
+         *      the buffer and verify CRC if applicable.
          * @param buf String buffer to write into, with at least
          *       optionalMetaByteCount() + REPLY_META_BYTECOUNT bytes
          * @param len String length
-         * @return Returns status code
+         * @return Returns the length of the reply that has been received
          */
-        status_code finishAndReadReply(uint8_t *buf = NULL, uint8_t len = 0);
+        uint8_t finishAndReadReply(uint8_t *buf = NULL, uint8_t len = 0);
 
         /* Reset CRC and write out command +
                                      address byte, if applicable */
