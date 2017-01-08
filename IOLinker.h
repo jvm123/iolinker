@@ -446,8 +446,7 @@ class IOLinker {
         void pwmPeriod(uint8_t per);
 
         /**
-         * @brief CLR command: Clear special functions (PWM output, pin
-         *      links) for pin range
+         * @brief CLR command: Clear pin links for pin range
          * @param pin_start First pin to update
          * @param pin_end Last pin to update, or 0 if only one is to be changed
          */

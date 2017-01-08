@@ -189,42 +189,11 @@ iolinker.syncBufferToOutputs(); // Simultaneous pin update!
 
 ### CLR: Clear PWM output and link settings for pins
 
-If you want to turn PWM or pin links back off for a pin and reuse it for something else, use the *iolinker.clearPinFunctions(firstpin, lastpin)* method.
+If you want to turn pin links back off for a pin and reuse it for something else, use the *iolinker.clearPinFunctions(firstpin, lastpin)* method.
 
 ```c++
 iolinker.clearPinFunctions(1); // Reset settings for P1
 iolinker.clearPinFunctions(2, 10); // Reset settings for P2 to P10
-```
-
-### Data safety: Checksums and status codes
-
-If it is vital for you that your changes are implemented correctly, you can activate CRC7 checksums and verify status codes of return messages. Checksums are activated and verified both ways.
-
-```c++
-// Activate CRC for all future commands
-iolinker.crc(true);
-
-// ...your command for changing output states or reading input
-// states, as shown above, e.g.
-iolinker.setPinType(IOLinker::IOLINKER_PULLDOWN, 2); // P2 will be a pulldown input
-
-// Verify the status code of the last command
-select (iolinker.statusCode()) {
-    case IOLinker::IOLINKER_STATUS_SUCCESS:
-        Serial.println("Success! Congratulations.");
-        break;
-    case IOLinker::IOLINKER_ERROR_CRC:
-        Serial.println("CRC error. Please check your hardware!");
-        break;
-    case IOLinker::IOLINKER_ERROR_NOREPLY:
-        Serial.println("No reply. Please check your wiring and initialization!");
-        break;
-    case IOLinker::IOLINKER_ERROR_INTERFACE:
-        Serial.println("Your interface setup was not correct. Please fix :)");
-        break;
-    default:
-        Serial.println("Undefined error from chip. Please make sure that the message you sent made sense.");
-}
 ```
 
 ### Listen for IO interrupts
