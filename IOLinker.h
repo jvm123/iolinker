@@ -185,18 +185,7 @@ class IOLinker {
             target_addr = addr;
         }
 
-        /**
-         * @brief Turn buffering on or off for following messages
-         */
-        inline void buffer(bool active)
-        {
-            if (active) {
-                cmdbyte |= IOLINKER_BITMASK_BUF_BIT;
-            } else {
-                cmdbyte &= ~(IOLINKER_BITMASK_BUF_BIT);
-            }
-        }
-
+#if 0 // Not supported right now
         /**
          * @brief Turn CRC error detection on or off for following messages
          */
@@ -208,7 +197,8 @@ class IOLinker {
                 cmdbyte &= ~(IOLINKER_BITMASK_CRC_BIT);
             }
         }
-        
+#endif
+
 #if defined(WIRINGPI)
         /**
          * @brief Register callback function for interrupt events
@@ -393,13 +383,13 @@ class IOLinker {
                 uint16_t pin_end = 0);
 
         /**
-         * @brief SYN command: Synchronize buffered IO state with the
-         *      current one (i.e.  copy current to buffer)
+         * @brief SYN command: Begin buffering the write commands that
+         *      follow.
          *
          * Use this command before you start preparing a new buffered IO
          * state that you plan to write out at a later point.
          */
-        void syncOutputsToBuffer(void);
+        void beginBuffering(void);
 
         /**
          * @brief TRG command: Execute all buffered IO states (i.e. copy
@@ -408,7 +398,7 @@ class IOLinker {
          * Use this command to write out the buffered IO states, i.e. change
          * all IO states in the same instant.
          */
-        void syncBufferToOutputs(void);
+        void executeBuffer(void);
 
         /**
          * @brief LNK command: Link output pin range to input/virtual pin z

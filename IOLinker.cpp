@@ -254,14 +254,14 @@ void IOLinker::setOutput(uint8_t *s, uint8_t len, uint16_t pin_start,
     finishAndReadReply();
 }
 
-void IOLinker::syncOutputsToBuffer(void)
+void IOLinker::beginBuffering(void)
 {
     writeCmd(IOLINKER_CMD_SYN);
     writeCRC();
     finishAndReadReply();
 }
 
-void IOLinker::syncBufferToOutputs(void)
+void IOLinker::executeBuffer(void)
 {
     writeCmd(IOLINKER_CMD_TRG);
     writeCRC();

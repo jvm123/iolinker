@@ -168,12 +168,11 @@ iolinker.pwmPeriod(127); // Longest period
 
 ### Synchronizing pin updates
 
-If you are updating a lot of pins individually and want the effect to be simultaneous, the iolinker chips allow to buffer pin settings. For that purpose, you first use the SYN command with *iolinker.syncOutputsToBuffer()*, activate the buffer with *iolinker.buffer(true)*, then run your pin update commands, and then trigger the simultaneous pin update using the TRG command with *iolinker.syncBufferToOutputs()*.
+If you are updating a lot of pins individually and want the effect to be simultaneous, the iolinker chips allow to buffer pin settings. For that purpose, you first use the SYN command with *iolinker.beginBuffering()*, then run your pin update commands, and then trigger the simultaneous pin update using the TRG command with *iolinker.executeBuffer()*.
 
 ```c++
 // Prepare buffered pin update
-iolinker.syncOutputsToBuffer();
-iolinker.buffer(true);
+iolinker.beginBuffering();
 
 // Your commands
 iolinker.pwm(13, 8); // P8 will be ~10.23% on
@@ -184,7 +183,7 @@ iolinker.setPinType(IOLinker::IOLINKER_PULLDOWN, 2); // P2 will be a pulldown in
 /* Note that the last four commands did not have any effect on the
    actual pin states yet! We activate them all at once now: */
 
-iolinker.syncBufferToOutputs(); // Simultaneous pin update!
+iolinker.executeBuffer(); // Simultaneous pin update!
 ```
 
 ### CLR: Clear PWM output and link settings for pins
