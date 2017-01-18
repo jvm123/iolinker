@@ -26,6 +26,14 @@ Note that wherever the examples use *Serial.println()*, the code may seem Arduin
 
 ### Initialization on PC and Raspberry
 
+First include the library header and create a class object:
+
+```c++
+#include <IOLinker.h>
+
+IOLinker iolinker;
+```
+
 Setting up the serial interface on a Raspberry or PC, to communicate with an UART iolinker chip:
 
 ```c++
