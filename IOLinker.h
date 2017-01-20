@@ -307,8 +307,8 @@ class IOLinker {
          */
         typedef enum pin_types {
             IOLINKER_INPUT = 0x00, /*!< Low impedance/tristate pin type */
-            IOLINKER_PULLDOWN = 0x01, /*!< Pulldown input pin type */
-            IOLINKER_PULLUP = 0x02, /*!< Pullup input pin type */
+            //IOLINKER_PULLDOWN = 0x01, /*!< Pulldown input pin type */
+            //IOLINKER_PULLUP = 0x02, /*!< Pullup input pin type */
             IOLINKER_OUTPUT = 0x03, /*!< Output pin type */
         } pin_types;
 

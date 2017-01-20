@@ -33,8 +33,8 @@ int main(void)
     iolinker.targetAddress(1);
     iolinker.setOutput(true, 4); // P4 is high
 
-    iolinker.setPinType(IOLinker::IOLINKER_PULLDOWN, 1); // P1 is a pulldown input
-    iolinker.setPinType(IOLinker::IOLINKER_PULLUP, 2); // P2 is a pullup input
+    //iolinker.setPinType(IOLinker::IOLINKER_PULLDOWN, 1); // P1 is a pulldown input
+    //iolinker.setPinType(IOLinker::IOLINKER_PULLUP, 2); // P2 is a pullup input
     iolinker.setPinType(IOLinker::IOLINKER_INPUT, 3); // P3 is a tristate input
     iolinker.setPinType(IOLinker::IOLINKER_OUTPUT, 4, 64); // P4 to P64 are outputs
 

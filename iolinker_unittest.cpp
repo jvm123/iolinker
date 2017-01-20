@@ -96,8 +96,7 @@ void test_crc(void)
             (uint8_t *)buf0, sizeof(buf0));
     sim_mode = SIM_MODE_CHECK;
     IOLinker.targetAddress(IOLinker::IOLINKER_TARGET_FIRST);
-    IOLinker.buffer(false);
-    IOLinker.crc(true);
+    //IOLinker.crc(true);
 
     expectedmsg_len = sizeof(msg1);
     strncpy((char *)buf_expectedmsg, (const char *)msg1, expectedmsg_len);
@@ -133,8 +132,7 @@ void testmsg_sendbuf(void)
     sim_mode = SIM_MODE_NOTTHERE;
 
     IOLinker.targetAddress(IOLinker::IOLINKER_TARGET_FIRST);
-    IOLinker.buffer(false);
-    IOLinker.crc(false);
+    //IOLinker.crc(false);
 
     expectedmsg_len = sizeof(sentout);
     strncpy((char *)buf_expectedmsg, (const char *)sentout, expectedmsg_len);
@@ -161,8 +159,7 @@ void testmsg_ver(void)
     sim_mode = SIM_MODE_NOTTHERE;
 
     IOLinker.targetAddress(IOLinker::IOLINKER_TARGET_ALL);
-    IOLinker.buffer(false);
-    IOLinker.crc(false);
+    //IOLinker.crc(false);
 
     expectedmsg_len = sizeof(msg1);
     strncpy((char *)buf_expectedmsg, (const char *)msg1, expectedmsg_len);
@@ -177,8 +174,7 @@ void testmsg_ver(void)
     uint16_t version;
 
     IOLinker.targetAddress(IOLinker::IOLINKER_TARGET_FIRST);
-    //IOLinker.buffer(true);
-    IOLinker.crc(false);
+    //IOLinker.crc(false);
 
     expectedmsg_len = sizeof(msg2);
     strncpy((char *)buf_expectedmsg, (const char *)msg2, expectedmsg_len);
@@ -194,8 +190,7 @@ void testmsg_ver(void)
     return;
     /* Test version different message with different reply */
     IOLinker.targetAddress(IOLinker::IOLINKER_TARGET_MAX);
-    //IOLinker.buffer(false);
-    IOLinker.crc(true);
+    //IOLinker.crc(true);
     
     expectedmsg_len = sizeof(msg4);
     strncpy((char *)buf_expectedmsg, (const char *)msg4, expectedmsg_len);
@@ -219,8 +214,7 @@ void testmsg_syn(void)
             (uint8_t *)buf0, sizeof(buf0));
     sim_mode = SIM_MODE_CHECK;
     IOLinker.targetAddress(IOLinker::IOLINKER_TARGET_FIRST);
-    IOLinker.buffer(false);
-    IOLinker.crc(false);
+    //IOLinker.crc(false);
 
     expectedmsg_len = sizeof(msg1);
     strncpy((char *)buf_expectedmsg, (const char *)msg1, expectedmsg_len);
@@ -229,7 +223,7 @@ void testmsg_syn(void)
     fakereply_len = 0;
 
     sim_success = 0;
-    IOLinker.syncOutputsToBuffer();
+    IOLinker.beginBuffering();
     assert(sim_success == 1);
     //assert(IOLinker.statusCode() == IOLinker::IOLINKER_STATUS_SUCCESS);
 }
@@ -244,8 +238,7 @@ void testmsg_trg(void)
             (uint8_t *)buf0, sizeof(buf0));
     sim_mode = SIM_MODE_CHECK;
     IOLinker.targetAddress(IOLinker::IOLINKER_TARGET_FIRST);
-    IOLinker.buffer(false);
-    IOLinker.crc(false);
+    //IOLinker.crc(false);
 
     expectedmsg_len = sizeof(msg1);
     strncpy((char *)buf_expectedmsg, (const char *)msg1, expectedmsg_len);
@@ -254,7 +247,7 @@ void testmsg_trg(void)
     fakereply_len = 0;
 
     sim_success = 0;
-    IOLinker.syncBufferToOutputs();
+    IOLinker.executeBuffer();
     assert(sim_success == 1);
     //assert(IOLinker.statusCode() == IOLinker::IOLINKER_STATUS_SUCCESS);
 }
@@ -269,8 +262,7 @@ void testmsg_rst(void)
             (uint8_t *)buf0, sizeof(buf0));
     sim_mode = SIM_MODE_CHECK;
     IOLinker.targetAddress(IOLinker::IOLINKER_TARGET_FIRST);
-    IOLinker.buffer(false);
-    IOLinker.crc(false);
+    //IOLinker.crc(false);
 
     expectedmsg_len = sizeof(msg1);
     strncpy((char *)buf_expectedmsg, (const char *)msg1, expectedmsg_len);
@@ -294,8 +286,7 @@ void testmsg_typ(void)
             (uint8_t *)buf0, sizeof(buf0));
     sim_mode = SIM_MODE_CHECK;
     IOLinker.targetAddress(IOLinker::IOLINKER_TARGET_FIRST);
-    IOLinker.buffer(false);
-    IOLinker.crc(false);
+    //IOLinker.crc(false);
 
     expectedmsg_len = sizeof(msg1);
     strncpy((char *)buf_expectedmsg, (const char *)msg1, expectedmsg_len);
@@ -318,8 +309,7 @@ void testmsg_clr(void)
             (uint8_t *)buf0, sizeof(buf0));
     sim_mode = SIM_MODE_CHECK;
     IOLinker.targetAddress(IOLinker::IOLINKER_TARGET_FIRST);
-    IOLinker.buffer(false);
-    IOLinker.crc(false);
+    //IOLinker.crc(false);
 
     expectedmsg_len = sizeof(msg1);
     strncpy((char *)buf_expectedmsg, (const char *)msg1, expectedmsg_len);
@@ -341,8 +331,7 @@ void testmsg_rea(void)
             (uint8_t *)buf0, sizeof(buf0));
     sim_mode = SIM_MODE_CHECK;
     IOLinker.targetAddress(IOLinker::IOLINKER_TARGET_FIRST);
-    IOLinker.buffer(false);
-    IOLinker.crc(false);
+    //IOLinker.crc(false);
 
     expectedmsg_len = sizeof(msg1);
     strncpy((char *)buf_expectedmsg, (const char *)msg1, expectedmsg_len);
@@ -368,8 +357,7 @@ void testmsg_rea2(void)
             (uint8_t *)buf0, sizeof(buf0));
     sim_mode = SIM_MODE_CHECK;
     IOLinker.targetAddress(IOLinker::IOLINKER_TARGET_FIRST);
-    IOLinker.buffer(false);
-    IOLinker.crc(false);
+    //IOLinker.crc(false);
 
     expectedmsg_len = sizeof(msg1);
     strncpy((char *)buf_expectedmsg, (const char *)msg1, expectedmsg_len);
@@ -404,8 +392,7 @@ void testmsg_set(void)
             (uint8_t *)buf0, sizeof(buf0));
     sim_mode = SIM_MODE_CHECK;
     IOLinker.targetAddress(IOLinker::IOLINKER_TARGET_FIRST);
-    IOLinker.buffer(false);
-    IOLinker.crc(false);
+    //IOLinker.crc(false);
 
     expectedmsg_len = sizeof(msg1);
     strncpy((char *)buf_expectedmsg, (const char *)msg1, expectedmsg_len);
@@ -438,8 +425,7 @@ void testmsg_lnk(void)
             (uint8_t *)buf0, sizeof(buf0));
     sim_mode = SIM_MODE_CHECK;
     IOLinker.targetAddress(IOLinker::IOLINKER_TARGET_FIRST);
-    IOLinker.buffer(false);
-    IOLinker.crc(false);
+    //IOLinker.crc(false);
 
     expectedmsg_len = sizeof(msg1);
     strncpy((char *)buf_expectedmsg, (const char *)msg1, expectedmsg_len);
@@ -463,8 +449,7 @@ void testmsg_pwm(void)
             (uint8_t *)buf0, sizeof(buf0));
     sim_mode = SIM_MODE_CHECK;
     IOLinker.targetAddress(IOLinker::IOLINKER_TARGET_FIRST);
-    IOLinker.buffer(false);
-    IOLinker.crc(false);
+    //IOLinker.crc(false);
 
     expectedmsg_len = sizeof(msg1);
     strncpy((char *)buf_expectedmsg, (const char *)msg1, expectedmsg_len);
@@ -488,8 +473,7 @@ void testmsg_per(void)
             (uint8_t *)buf0, sizeof(buf0));
     sim_mode = SIM_MODE_CHECK;
     IOLinker.targetAddress(IOLinker::IOLINKER_TARGET_FIRST);
-    IOLinker.buffer(false);
-    IOLinker.crc(false);
+    //IOLinker.crc(false);
 
     expectedmsg_len = sizeof(msg1);
     strncpy((char *)buf_expectedmsg, (const char *)msg1, expectedmsg_len);
