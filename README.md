@@ -100,9 +100,7 @@ By default, all pins on the iolinker chip are Tristate (open collector) inputs. 
 ```c++
 iolinker.setPinType(IOLinker::IOLINKER_OUTPUT, 1); // P1 is an output
 iolinker.setPinType(IOLinker::IOLINKER_OUTPUT, 2); // P2 is an output
-iolinker.setPinType(IOLinker::IOLINKER_PULLUP, 3); // P3 is a pullup input
-iolinker.setPinType(IOLinker::IOLINKER_INPUT, 4); // P4 is a tristate input
-iolinker.setPinType(IOLinker::IOLINKER_PULLDOWN, 5); // P5 is a pulldown input
+iolinker.setPinType(IOLinker::IOLINKER_INPUT, 2); // P2 is a tristate input now
 iolinker.setPinType(IOLinker::IOLINKER_OUTPUT, 6, 64); // P6 to P64 are outputs
 ```
 
@@ -186,7 +184,6 @@ iolinker.beginBuffering();
 iolinker.pwm(13, 8); // P8 will be ~10.23% on
 iolinker.setOutput(true, 9); // P9 will be high
 iolinker.setOutput(false, 10); // P10 will be low
-iolinker.setPinType(IOLinker::IOLINKER_PULLDOWN, 2); // P2 will be a pulldown input
 
 /* Note that the last four commands did not have any effect on the
    actual pin states yet! We activate them all at once now: */
@@ -244,7 +241,7 @@ void setup() {
     
     iolinker.beginSPI(); // Connect to SPI chip
     iolinker.targetAddress(1); // Address 1
-    iolinker.setPinType(IOLinker::IOLINKER_PULLUP, 3); // P3 is our input
+    iolinker.setPinType(IOLinker::IOLINKER_INPUT, 3); // P3 is our input
     iolinker.registerInterrupt(9); // INT is connected to Arduino pin 9
 
     Serial.println("Now listening for pin interrupts on P3!");
