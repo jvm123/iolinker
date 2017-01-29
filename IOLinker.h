@@ -526,7 +526,7 @@ class IOLinker {
 
         uint8_t __crc = 0; /*!< CRC of the message currently being
                                 constructed */
-        uint8_t target_addr = IOLINKER_TARGET_FIRST; /*!< Current target address */
+        uint8_t target_addr = IOLINKER_TARGET_ALL; /*!< Current target address */
         uint8_t cmdbyte = IOLINKER_BITMASK_CMD_BIT; /*!< Current command byte */
         
         /** Protocol format **/
