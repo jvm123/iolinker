@@ -730,6 +730,10 @@ class IOLinker {
          */
         inline uint8_t pin_distance(uint16_t pin1, uint16_t pin2)
         {
+            if (pin2 == 0) {
+                return 0;
+            }
+
             pin1 = pin_addr(pin1);
             pin2 = pin_addr(pin2);
             if (pin1 >= pin2) {
