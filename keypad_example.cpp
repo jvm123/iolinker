@@ -46,7 +46,7 @@ void schematicKeyPad() {
   iolinker.setPinType(IOLinker::IOLINKER_OUTPUT, KEYPAD_COL0,
           KEYPAD_COL0 + KEYPAD_COLS * PIN_INTERVAL);
   iolinker.setPinType(IOLinker::IOLINKER_INPUT, KEYPAD_ROW0,
-          KEYPAD_ROWL + KEYPAD_COLS * PIN_INTERVAL);
+          KEYPAD_ROW0 + KEYPAD_ROWS * PIN_INTERVAL);
 }
 
 char _button_press() {
@@ -70,20 +70,20 @@ char _button_press() {
 
         iolinker.setOutput(true, KEYPAD_COL0 + i*PIN_INTERVAL);
 
-        if (btn_zero == 4) {
+        if (btn_zero == KEYPAD_ROWS) {
             row = i;
             rows++;
             continue;
         }
     }
 
-    if (rows == 4) {
+    if (rows == KEYPAD_ROWS) {
         btn = '-';
     } else {
 #ifndef KEYPAD_INVERT
         btn = keypad[row][col];
 #else
-        btn = keypad[3 - row][3 - col];
+        btn = keypad[KEYPAD_ROWS - 1 - row][KEYPAD_COLS - 1 - col];
 #endif
     }
     
