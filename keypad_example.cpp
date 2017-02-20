@@ -53,7 +53,7 @@ char button_press() {
           KEYPAD_ROW0 + KEYPAD_ROWS * PIN_INTERVAL);
     iolinker.setPinType(IOLinker::IOLINKER_INPUT, KEYPAD_COL0,
           KEYPAD_COL0 + KEYPAD_COLS * PIN_INTERVAL);
-  
+
     /* Cycle through columns */
     for (uint8_t i = 0; i < KEYPAD_COLS; i++) {
         /* One column is a high output, all other columns are
