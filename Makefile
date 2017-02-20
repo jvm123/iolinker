@@ -8,10 +8,14 @@ LDLIBS=#$(shell root-config --libs)
 SRCS=IOLinker.cpp
 SRCS_unittest=$(SRCS) wiringSerial.cpp iolinker_unittest.cpp
 SRCS_pcserial=$(SRCS) wiringSerial.cpp iolinker_pcserial.cpp
+SRCS_pwm_example=$(SRCS) wiringSerial.cpp pwm_example.cpp
+SRCS_keypad_example=$(SRCS) wiringSerial.cpp keypad_example.cpp
 
 OBJS=$(subst .cpp,.o,$(SRCS))
 OBJS_unittest=$(subst .cpp,.o,$(SRCS_unittest))
 OBJS_pcserial=$(subst .cpp,.o,$(SRCS_pcserial))
+OBJS_pwm_example=$(subst .cpp,.o,$(SRCS_pwm_example))
+OBJS_keypad_example=$(subst .cpp,.o,$(SRCS_keypad_example))
 
 all: unittest
 
@@ -23,6 +27,12 @@ test: unittest
 
 pcserial: $(OBJS_pcserial)
 	$(CXX) $(LDFLAGS) -o iolinker_pcserial $(OBJS_pcserial) $(LDLIBS) 
+
+pwm_example: $(OBJS_pwm_example)
+	$(CXX) $(LDFLAGS) -o pwm_example $(OBJS_pwm_example) $(LDLIBS) 
+
+keypad_example: $(OBJS_keypad_example)
+	$(CXX) $(LDFLAGS) -o keypad_example $(OBJS_keypad_example) $(LDLIBS) 
 
 depend: .depend
 

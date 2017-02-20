@@ -28,86 +28,59 @@ void resetschematic() {
   iolinker.setPinType(IOLinker::IOLINKER_INPUT, 0, 48);
 }
 
-#define PIN_INTERVAL 2
-#define KEYPAD_INVERT
-#define KEYPAD_COLS 4
-#define KEYPAD_ROWS 4
-#define KEYPAD_COL0 24
-#define KEYPAD_COLL 30
-#define KEYPAD_ROW0 16
-#define KEYPAD_ROWL 22
+/** Keypad definitions **/
+
+#define KEYPAD_INVERT /*< Invert pin direction */
+#define PIN_INTERVAL 2 /*< Use every second pin */
+#define KEYPAD_COLS 4 /*< Column count */
+#define KEYPAD_ROWS 4 /*< Row count */
+#define KEYPAD_ROW0 16 /*< Lowest pin the keypad is connected to */
+#define KEYPAD_COL0 (KEYPAD_ROW0 + PIN_INTERVAL * KEYPAD_ROWS)
+
 char keypad[KEYPAD_ROWS][KEYPAD_COLS] = {
         { '1', '2', '3', 'A' },
         { '4', '5', '6', 'B' },
         { '7', '8', '9', 'C' },
-        { '*', '0', '#', 'D' } };
+        { '*', '0', '#', 'D' } }; /*< Keypad buttons */
 
-void schematicKeyPad() {
-  iolinker.setPinType(IOLinker::IOLINKER_OUTPUT, KEYPAD_COL0,
+/*! \brief Read in the currently pressed keypad button
+    \return The button character is returned, or '-' if no button press
+        is detected
+*/
+char button_press() {
+    /* Set all pins as pulldown input */
+    iolinker.setPinType(IOLinker::IOLINKER_INPUT, KEYPAD_ROW0,
+          KEYPAD_ROW0 + KEYPAD_ROWS * PIN_INTERVAL);
+    iolinker.setPinType(IOLinker::IOLINKER_INPUT, KEYPAD_COL0,
           KEYPAD_COL0 + KEYPAD_COLS * PIN_INTERVAL);
-  iolinker.setPinType(IOLinker::IOLINKER_INPUT, KEYPAD_ROW0,
-          KEYPAD_ROWL + KEYPAD_COLS * PIN_INTERVAL);
-}
-
-char _button_press() {
-    int row = -1, col = -1, rows = 0;
-    char btn;
   
+    /* Cycle through columns */
     for (uint8_t i = 0; i < KEYPAD_COLS; i++) {
+        /* One column is a high output, all other columns are
+           configured as input */
         iolinker.setPinType(IOLinker::IOLINKER_OUTPUT,
                 KEYPAD_COL0 + i*PIN_INTERVAL);
-        iolinker.setOutput(false, KEYPAD_COL0 + i*PIN_INTERVAL);
+        iolinker.setOutput(true, KEYPAD_COL0 + i*PIN_INTERVAL);
     
-        uint8_t btn_zero = 0;
+        /* Read in rows */
         for (uint8_t k = 0; k < KEYPAD_ROWS; k++) {
             if (!iolinker.readInput(KEYPAD_ROW0 + k*PIN_INTERVAL)) {
-                btn_zero++;
-            } else {
-                col = k;
+                continue;
             }
-            usleep(100);
-        }
 
-        iolinker.setOutput(true, KEYPAD_COL0 + i*PIN_INTERVAL);
-
-        if (btn_zero == 4) {
-            row = i;
-            rows++;
-            continue;
-        }
-    }
-
-    if (rows == 4) {
-        btn = '-';
-    } else {
+            /* Row input is high, i.e. we found a pressed key */
 #ifndef KEYPAD_INVERT
-        btn = keypad[row][col];
+            return keypad[i][k];
 #else
-        btn = keypad[3 - row][3 - col];
+            return keypad[KEYPAD_ROWS - 1 - i][KEYPAD_COLS - 1 - k];
 #endif
-    }
-    
-    return btn;
-}
+        }
 
-/*! \brief Filtered key presses */
-char button_press() {
-    static char val = '-';
-    char read = _button_press();
-
-    char read2 = _button_press();
-    if (read != read2) {
-        return '-';
-    }
-    
-    if (read != '-' && val == '-') {
-        val = read;
-        return read;
+        /* Reset column to input state */
+        iolinker.setPinType(IOLinker::IOLINKER_INPUT,
+                KEYPAD_COL0 + i*PIN_INTERVAL);
     }
 
-    if (read == '-') {
-        val = '-';
-    }
     return '-';
 }
 
@@ -124,7 +97,7 @@ int main(void)
     printf("Waiting for key press...\n");
 
     resetschematic();
-    schematicKeyPad();
+    
 	while (1) {
         char key;
         if ((key = button_press()) != '-') {
