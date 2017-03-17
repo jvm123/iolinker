@@ -41,7 +41,7 @@ depend: .depend
 	$(CXX) $(CPPFLAGS) -MM $^>>./.depend;
 
 clean:
-	$(RM) $(OBJS_unittest) $(OBJS_pcserial)
+	$(RM) $(OBJS_unittest) $(OBJS_pcserial) $(OBJS_pwm_example) $(OBJS_keypad_example)
 
 dist-clean: clean
 	$(RM) *~ .depend

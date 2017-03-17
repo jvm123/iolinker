@@ -324,8 +324,11 @@ uint16_t IOLinker::firstAddress(void)
     uint8_t addr = 0;
     
     do {
-        targetAddress(++addr);
-    } while (!available() && addr < IOLINKER_TARGET_MAX);
+        targetAddress(addr);
+        if (available()) {
+            break;
+        }
+    } while (addr++ < IOLINKER_TARGET_MAX);
 
     return ((addr > IOLINKER_TARGET_MAX) ? 128 : addr);
 }
