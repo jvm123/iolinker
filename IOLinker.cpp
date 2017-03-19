@@ -321,16 +321,15 @@ void IOLinker::reset(void)
 
 uint16_t IOLinker::firstAddress(void)
 {
-    uint8_t addr = 0;
-    
-    do {
+    for (uint8_t addr = 0; addr <= IOLINKER_TARGET_MAX; addr++) {
         targetAddress(addr);
-        if (available()) {
-            break;
-        }
-    } while (addr++ < IOLINKER_TARGET_MAX);
 
-    return ((addr > IOLINKER_TARGET_MAX) ? 128 : addr);
+        if (available()) {
+            return addr;
+        }
+    }
+
+    return 128;
 }
 
 uint16_t IOLinker::chainLength(uint8_t start)
@@ -388,16 +387,11 @@ uint8_t IOLinker::finishAndReadReply(uint8_t *s, uint8_t len)
         for (int timeout = 10; (!serialDataAvail(interface_fd)
                 && timeout > 0); timeout--) {
 #ifdef __PC
-            usleep(100);
+            usleep(10000);
 #else
-            delayMicroseconds(100);
+            delayMicroseconds(10000);
 #endif
         }
-#ifdef __PC
-        usleep(10000);
-#else
-        delayMicroseconds(10000);
-#endif
 
         if (serialDataAvail(interface_fd)) {
             i = read(interface_fd, s, len);
