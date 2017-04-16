@@ -23,6 +23,13 @@
 IOLinker iolinker;
 
 void resetschematic() {
+    for (uint8_t i = 0; i < 49; i++) {
+      iolinker.pwm(127, i);
+      iolinker.clearPinFunctions(i);
+      iolinker.setPinType(IOLinker::IOLINKER_INPUT, i);
+    }
+    return;
+
   iolinker.pwm(127, 0, 48);
   iolinker.clearPinFunctions(0, 48);
   iolinker.setPinType(IOLinker::IOLINKER_INPUT, 0, 48);
@@ -30,11 +37,12 @@ void resetschematic() {
 
 /** Keypad definitions **/
 
-#define KEYPAD_INVERT /*< Invert pin direction */
+#define KEYPAD_INVERTX /*< Invert pin direction */
+//#define KEYPAD_INVERTY /*< Invert pin direction */
 #define PIN_INTERVAL 2 /*< Use every second pin */
 #define KEYPAD_COLS 4 /*< Column count */
 #define KEYPAD_ROWS 4 /*< Row count */
-#define KEYPAD_ROW0 16 /*< Lowest pin the keypad is connected to */
+#define KEYPAD_ROW0 34 /*< Lowest pin the keypad is connected to */
 #define KEYPAD_COL0 (KEYPAD_ROW0 + PIN_INTERVAL * KEYPAD_ROWS)
 
 char keypad[KEYPAD_ROWS][KEYPAD_COLS] = {
@@ -61,15 +69,25 @@ char button_press() {
         iolinker.setPinType(IOLinker::IOLINKER_OUTPUT,
                 KEYPAD_COL0 + i*PIN_INTERVAL);
         iolinker.setOutput(true, KEYPAD_COL0 + i*PIN_INTERVAL);
-    
+
         /* Read in rows */
+        //uint8_t s[20];
+        //iolinker.readInput(s, sizeof(s), KEYPAD_ROW0,
+        //        KEYPAD_ROW0 + (KEYPAD_ROWS-1)*PIN_INTERVAL);
+
         for (uint8_t k = 0; k < KEYPAD_ROWS; k++) {
             if (!iolinker.readInput(KEYPAD_ROW0 + k*PIN_INTERVAL)) {
                 continue;
             }
+            //printf("%d high, %d, %d\n", KEYPAD_ROW0 + k*PIN_INTERVAL, i, k);
 
             /* Row input is high, i.e. we found a pressed key */
-#ifndef KEYPAD_INVERT
+#ifdef KEYPAD_INVERTY
+            uint8_t tmp = k;
+            k = i;
+            i = tmp;
+#endif
+#ifndef KEYPAD_INVERTX
             return keypad[i][k];
 #else
             return keypad[KEYPAD_ROWS - 1 - i][KEYPAD_COLS - 1 - k];
@@ -79,6 +97,7 @@ char button_press() {
         /* Reset column to input state */
         iolinker.setPinType(IOLinker::IOLINKER_INPUT,
                 KEYPAD_COL0 + i*PIN_INTERVAL);
+        usleep(10000);
     }
 
     return '-';
@@ -94,10 +113,15 @@ int main(void)
         return 0;
     }
     printf("iolinker is responding.\n");
-    printf("Waiting for key press...\n");
-
     resetschematic();
+
+    for (uint16_t i = 0; i < 49; i++) {
+        if (iolinker.readInput(i)) {
+            printf("%d high\n", i);
+        }
+    }
     
+    printf("Waiting for key press...\n");
 	while (1) {
         char key;
         if ((key = button_press()) != '-') {

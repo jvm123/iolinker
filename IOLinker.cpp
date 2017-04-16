@@ -209,7 +209,7 @@ void IOLinker::setOutput(bool state, uint16_t pin_start, uint16_t pin_end)
     writeCmd(IOLINKER_CMD_SET);
     writeMsg(buf, sizeof(buf));
     
-    uint8_t byte = ((state) ? 0xff : 0x00);
+    uint8_t byte = ((state) ? 0x7f : 0x00);
     for (uint8_t i = 0; i < bytecount; i++) {
         writeMsg(&byte, 1);
     }
@@ -423,8 +423,8 @@ uint8_t IOLinker::finishAndReadReply(uint8_t *s, uint8_t len)
             SPI.transfer(s, len);
         }
         i = len;
-        SPI.endTransaction();
         digitalWrite(__IOLINKER_SPI_CS, HIGH); // unselect
+        SPI.endTransaction();
     } else if (interface_mode == IOLINKER_UART) {
         for (; i < len; i++) {
             s[i] = interface_stream->read();
@@ -496,7 +496,7 @@ void IOLinker::writeMsg(uint8_t *s, uint8_t len)
     }
 #endif
 
-    if (interface_mode == IOLINKER_INTERFACE_CALLBACK) {
+    else if (interface_mode == IOLINKER_INTERFACE_CALLBACK) {
         if ((interface_buf + len) <= interface_buf_end) {
             strncpy((char *)interface_buf, (const char *)s, (size_t)len);
             interface_buf += len;
@@ -531,7 +531,15 @@ void IOLinker::writeCmd(cmd_t cmd)
     /* Nothing to prepare for PC UART transmission */
 #endif
 
-    writeMsg(&target_addr, 1);
+    /* In UART mode, we send out the target address in an extra byte manually.
+       In SPI, target selection is done through the SS line, and in I2C, the
+       address byte is part of the I2C specification and is sent out
+       automatically. */
+    if (interface_mode == IOLINKER_UART ||
+            interface_mode == IOLINKER_INTERFACE_CALLBACK) {
+        uint8_t tmp = target_addr;
+        writeMsg(&tmp, 1);
+    }
     writeMsg(&cmdbyte, 1);
 }
 

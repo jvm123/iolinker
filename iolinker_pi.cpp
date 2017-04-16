@@ -16,38 +16,75 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include <unistd.h>
 #include <algorithm>
 #include "IOLinker.h"
 #include <wiringPi.h>
+
+/* Initialize class */
+IOLinker iolinker;
+
+void resetschematic() {
+  iolinker.pwm(127, 0, 48);
+  iolinker.clearPinFunctions(0, 48);
+  iolinker.setPinType(IOLinker::IOLINKER_INPUT, 0, 48);
+}
 
 int main(void)
 {
     wiringPiSetupSys();
 
-    /* Initialize class */
-    IOLinker iolinker;
-
-    iolinker.beginSPI(0);
+    //iolinker.beginSPI(0);
     //iolinker.beginI2C();
-    //iolinker.beginSerial("/dev/ttyAMA0");
-    iolinker.targetAddress(1);
-    iolinker.setOutput(true, 4); // P4 is high
+    iolinker.beginSerial("/dev/ttyAMA0");
+    iolinker.targetAddress(0x7f);
+    iolinker.setPinType(IOLinker::IOLINKER_INPUT, 32); /* Arduino0 servo output */
+    iolinker.setPinType(IOLinker::IOLINKER_OUTPUT, 47); /* Servo output */
+    iolinker.link(32, 47);
+return 1;
+    if (iolinker.version() != 0x131) {
+        printf("ERROR: No response from iolinker (version %x).\n",
+                iolinker.version());
+        return 0;
+    }
+    printf("iolinker is responding.\n");
 
-    //iolinker.setPinType(IOLinker::IOLINKER_PULLDOWN, 1); // P1 is a pulldown input
-    //iolinker.setPinType(IOLinker::IOLINKER_PULLUP, 2); // P2 is a pullup input
-    iolinker.setPinType(IOLinker::IOLINKER_INPUT, 3); // P3 is a tristate input
-    iolinker.setPinType(IOLinker::IOLINKER_OUTPUT, 4, 64); // P4 to P64 are outputs
+    //resetschematic();
 
-    // Don't forget to set pin types first, see TYP section.
+    iolinker.setPinType(IOLinker::IOLINKER_INPUT, 43, 49); /* Arduino 1 LCD connections */
+    usleep(10000);
+    iolinker.setPinType(IOLinker::IOLINKER_OUTPUT, 13, 19); /* LCD outputs */
+    usleep(10000);
 
-    iolinker.setOutput(true, 4); // P4 is high
-    iolinker.setOutput(false, 5); // P5 is low
-    iolinker.setOutput(true, 6, 48); // P6 to P48 are high
+    for (int i = 0; i < 6; i++) {
+        //iolinker.link(33 + i, 13 + i); /* Link Arduino 0 to LCD */
+        usleep(10000);
+    }
 
-    
-    uint8_t s[] = { 0x00, 0xff };
-    iolinker.setOutput(s, sizeof(s), 49, 64); // P49 to P56 are low, P57 to P64 are high
+    for (int i = 0; i < 6; i++) {
+        //iolinker.link(21 + i*2, 13 + i); /* Link Arduino 1 to LCD */
+        usleep(10000);
+    }
 
+    for (int i = 0; i < 6; i++) {
+        //iolinker.link(20 + i*2, 13 + i); /* Link Arduino 2 to LCD */
+        usleep(10000);
+    }
+
+    for (int i = 0; i < 6; i++) {
+        iolinker.link(1 + i*2, 13 + i); /* Link Arduino 3 to LCD */
+        usleep(10000);
+    }
+
+    iolinker.setPinType(IOLinker::IOLINKER_OUTPUT, 43); /* Servo GND */
+    iolinker.setPinType(IOLinker::IOLINKER_OUTPUT, 45); /* Servo VCC */
+    iolinker.setOutput(false, 43);
+    iolinker.setOutput(true, 45);
+    iolinker.setPinType(IOLinker::IOLINKER_INPUT, 32); /* Arduino0 servo output */
+    iolinker.setPinType(IOLinker::IOLINKER_OUTPUT, 47); /* Servo output */
+    iolinker.link(32, 47);
+
+    return 1;
     uint8_t id = iolinker.firstAddress();
     printf("The first slave address is %d, and the chain length from there is %d.\n",
             id, iolinker.chainLength(id));

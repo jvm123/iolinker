@@ -111,8 +111,9 @@ class IOLinker {
             interface_stream = &stream;
         }
 
-#define __IOLINKER_SPI_SETTINGS SPISettings(14000000, MSBFIRST, SPI_MODE0)
-#define __IOLINKER_SPI_CS (10)        
+#define __IOLINKER_SPI_SETTINGS SPISettings(20000000, MSBFIRST, SPI_MODE0)
+#define __IOLINKER_SPI_CS (10)
+
         /**
          * @brief Setup SPI master
          */
@@ -121,11 +122,7 @@ class IOLinker {
             interface_mode = IOLINKER_SPI;
             SPI.begin();
             pinMode(__IOLINKER_SPI_CS, OUTPUT);
-#ifdef SPI_CLOCK_DIV2
-            SPI.setClockDivider(SPI_CLOCK_DIV2);
-#else
             SPI.setClockDivider(SPI_CLOCK_DIV4);
-#endif
             SPI.setDataMode(SPI_MODE0);
         }
         
@@ -758,6 +755,9 @@ class IOLinker {
         
         /**
          * @brief Write out additional message part
+         * @param *s The message to write out. Note that in SPI interface
+         *      mode, the response is read in simultaneously, and written
+         *      into *s directly.
          */
         void writeMsg(uint8_t *s, uint8_t len);
         
