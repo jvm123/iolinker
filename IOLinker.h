@@ -650,7 +650,7 @@ class IOLinker {
          */
         inline uint8_t argByte(uint8_t *buf, uint8_t len, uint8_t i)
         {
-            if (len < (addrByteCount() + i)) {
+            if (len <= (addrByteCount() + i)) {
                 return 0;
             }
             return buf[addrByteCount() + i];

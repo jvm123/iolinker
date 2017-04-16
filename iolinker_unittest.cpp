@@ -374,7 +374,7 @@ void testmsg_rea2(void)
     strncpy((char *)buf_fakereply, (const char *)msg2, fakereply_len);
 
     sim_success = 0;
-    uint8_t buf;
+    uint8_t buf = 0;
     assert(!IOLinker.readInput(5));
     assert(sim_success == 1);
     //assert(IOLinker.statusCode() == IOLinker::IOLINKER_STATUS_SUCCESS);
@@ -384,7 +384,7 @@ void testmsg_rea2(void)
     fakereply_len = sizeof(msg4);
     strncpy((char *)buf_fakereply, (const char *)msg4, fakereply_len);
     
-    IOLinker.readInput(&buf, sizeof(buf), 1, 7);
+    IOLinker.readInput(&buf, 1, 1, 7);
     assert(sim_success == 1);
     //assert(IOLinker.statusCode() == IOLinker::IOLINKER_STATUS_SUCCESS);
     assert(buf == (0x55 << 1));

@@ -32,7 +32,7 @@ void resetschematic() {
 
 int main(void)
 {
-    wiringPiSetupSys();
+    wiringPiSetup();
 
     //iolinker.beginSPI(0);
     //iolinker.beginI2C();

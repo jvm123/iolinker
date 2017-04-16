@@ -177,8 +177,8 @@ void IOLinker::readInput(uint8_t *s, uint8_t len, uint16_t pin_start,
     uint8_t offset = 1, j = 0, lastbyte = 0;
 
     for (uint8_t i = 0; i < len; i++) {
-        uint8_t byte = (argByte(s, sizeof(s), 0 + j) << offset);
-        byte |= (argByte(s, sizeof(s), 1 + j) >> (7 - offset));
+        uint8_t byte = (argByte(s, len, 0 + j) << offset);
+        byte |= (argByte(s, len, 1 + j) >> (7 - offset));
 
         s[j] = byte;
 
