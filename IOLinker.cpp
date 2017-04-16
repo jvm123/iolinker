@@ -41,6 +41,7 @@ void IOLinker::beginSPI(uint8_t channel)
 {
     interface_mode = IOLINKER_SPI;
     interface_fd = wiringPiSPISetup(channel, __IOLINKER_SPI_CLK);
+    pinMode(__IOLINKER_SPI_CS, OUTPUT);
 }
 
 void IOLinker::beginI2C(void)
@@ -371,31 +372,38 @@ uint8_t IOLinker::finishAndReadReply(uint8_t *s, uint8_t len)
     if (interface_mode == IOLINKER_I2C || interface_mode == IOLINKER_SPI ||
             interface_mode == IOLINKER_UART) {
         if (interface_fd == -1) {
-            return i;
-        }
-        if (len == 0 || s == NULL) {
+            digitalWrite(__IOLINKER_SPI_CS, HIGH); // unselect
             return i;
         }
        
-        for (int timeout = 10; (!serialDataAvail(interface_fd)
-                && timeout > 0); timeout--) {
+        if (interface_mode == IOLINKER_UART) {
+            for (int timeout = 10; (!serialDataAvail(interface_fd)
+                    && timeout > 0); timeout--) {
 #ifdef __PC
-            usleep(10000);
+                usleep(10000);
 #else
-            delayMicroseconds(10000);
+                delayMicroseconds(10000);
 #endif
+            }
+        } else if (interface_mode == IOLINKER_SPI) {
+            uint8_t buf[] = { 0 };
+            write(interface_fd, buf, sizeof(buf));
+        }
+        
+        if (len == 0 || s == NULL) {
+            digitalWrite(__IOLINKER_SPI_CS, HIGH); // unselect
+            return i;
         }
 
-        if (serialDataAvail(interface_fd)) {
+        if (interface_mode == IOLINKER_I2C ||
+                interface_mode == IOLINKER_SPI ||
+                serialDataAvail(interface_fd)) {
             i = read(interface_fd, s, len);
-            //printf("Got data of length %d! %x %x\n", i, s[0], s[1]);
-            
-            /*if (i < 0) {
-                i = 0;
-            }*/
         }
 
-        // TODO: For SPI, unset SS
+        if (interface_mode == IOLINKER_SPI) {
+            digitalWrite(__IOLINKER_SPI_CS, HIGH); // unselect
+        }
     }
 #elif defined(ARDUINO)
     if (interface_mode == IOLINKER_I2C) {
@@ -407,6 +415,9 @@ uint8_t IOLinker::finishAndReadReply(uint8_t *s, uint8_t len)
             }
         }
     } else if (interface_mode == IOLINKER_SPI) {
+        uint8_t buf[] = { 0 };
+        SPI.transfer(buf, sizeof(buf));
+
         if (len > 0) {
             memset(s, '\0', len);
             SPI.transfer(s, len);
@@ -534,8 +545,9 @@ void IOLinker::newCmd()
 #endif
 
 #ifdef WIRINGPI
-    /* Nothing to do on Raspberry */
-    // TODO: For SPI, set SS
+    if (interface_mode == IOLINKER_SPI) {
+        digitalWrite(__IOLINKER_SPI_CS, LOW); // select
+    }
 #elif defined(ARDUINO)
     if (interface_mode == IOLINKER_SPI) {
         digitalWrite(__IOLINKER_SPI_CS, LOW); // select

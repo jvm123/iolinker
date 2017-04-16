@@ -87,7 +87,8 @@ class IOLinker {
 #endif
 
 #ifdef WIRINGPI
-#define __IOLINKER_SPI_CLK (3200000UL)
+#define __IOLINKER_SPI_CLK (4000000UL)
+#define __IOLINKER_SPI_CS (1)
         
         /**
          * @brief Setup SPI master
@@ -111,7 +112,7 @@ class IOLinker {
             interface_stream = &stream;
         }
 
-#define __IOLINKER_SPI_SETTINGS SPISettings(20000000, MSBFIRST, SPI_MODE0)
+#define __IOLINKER_SPI_SETTINGS SPISettings(4000000, MSBFIRST, SPI_MODE0)
 #define __IOLINKER_SPI_CS (10)
 
         /**
@@ -122,7 +123,7 @@ class IOLinker {
             interface_mode = IOLINKER_SPI;
             SPI.begin();
             pinMode(__IOLINKER_SPI_CS, OUTPUT);
-            SPI.setClockDivider(SPI_CLOCK_DIV4);
+            SPI.setClockDivider(SPI_CLOCK_DIV2);
             SPI.setDataMode(SPI_MODE0);
         }
         
