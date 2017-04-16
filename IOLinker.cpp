@@ -368,22 +368,38 @@ uint8_t IOLinker::finishAndReadReply(uint8_t *s, uint8_t len)
 {
     int i = 0;
 
-#if defined(WIRINGPI) || defined(__PC)
+#if defined(__PC)
+    if (interface_mode == IOLINKER_UART) {
+        if (interface_fd == -1) {
+            return i;
+        }
+        if (len == 0 || s == NULL) {
+            return i;
+        }
+       
+        for (int timeout = 10; (!serialDataAvail(interface_fd)
+                && timeout > 0); timeout--) {
+            usleep(10000);
+        }
+    
+        if (serialDataAvail(interface_fd)) {
+            i = read(interface_fd, s, len);
+        }
+    }
+#elif defined(WIRINGPI)
     if (interface_mode == IOLINKER_I2C || interface_mode == IOLINKER_SPI ||
             interface_mode == IOLINKER_UART) {
         if (interface_fd == -1) {
-            digitalWrite(__IOLINKER_SPI_CS, HIGH); // unselect
+            if (interface_mode == IOLINKER_SPI) {
+                digitalWrite(__IOLINKER_SPI_CS, HIGH); // unselect
+            }
             return i;
         }
        
         if (interface_mode == IOLINKER_UART) {
             for (int timeout = 10; (!serialDataAvail(interface_fd)
                     && timeout > 0); timeout--) {
-#ifdef __PC
-                usleep(10000);
-#else
                 delayMicroseconds(10000);
-#endif
             }
         } else if (interface_mode == IOLINKER_SPI) {
             uint8_t buf[] = { 0 };
@@ -391,7 +407,9 @@ uint8_t IOLinker::finishAndReadReply(uint8_t *s, uint8_t len)
         }
         
         if (len == 0 || s == NULL) {
-            digitalWrite(__IOLINKER_SPI_CS, HIGH); // unselect
+            if (interface_mode == IOLINKER_SPI) {
+                digitalWrite(__IOLINKER_SPI_CS, HIGH); // unselect
+            }
             return i;
         }
 

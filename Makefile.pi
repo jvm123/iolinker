@@ -17,11 +17,11 @@ OBJS_pi=$(subst .cpp,.o,$(SRCS_pi))
 
 all: pi
 
-unittest: $(OBJS_unittest)
-	$(CXX) $(LDFLAGS) -o iolinker_unittest $(OBJS_unittest) $(LDLIBS) 
+#unittest: $(OBJS_unittest)
+#	$(CXX) $(LDFLAGS) -o iolinker_unittest $(OBJS_unittest) $(LDLIBS) 
 
-test: unittest
-	./iolinker_unittest
+#test: unittest
+#	./iolinker_unittest
 
 pi: $(OBJS_pi)
 	$(CXX) $(LDFLAGS) -o iolinker_pi $(OBJS_pi) $(LDLIBS)
