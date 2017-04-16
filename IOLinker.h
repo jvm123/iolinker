@@ -473,8 +473,7 @@ class IOLinker {
         uint8_t crc7(uint8_t *s, uint8_t len, uint8_t crc = 0);
 
 
-#if defined(ARDUINO) || defined(WIRINGPI) /* Avoid private methods in PC
-                                             unit test */
+#if defined(ARDUINO) /* Avoid private methods in for unit test */
     private:
 #endif
 
@@ -749,12 +748,11 @@ class IOLinker {
          */
         uint8_t finishAndReadReply(uint8_t *buf = NULL, uint8_t len = 0);
 
-        /* Reset CRC and write out command +
-                                     address byte, if applicable */
-        void writeCmd(cmd_t cmd);
+        /* Reset CRC and prepare new message */
+        void newCmd(void);
         
         /**
-         * @brief Write out additional message part
+         * @brief Write out message
          * @param *s The message to write out. Note that in SPI interface
          *      mode, the response is read in simultaneously, and written
          *      into *s directly.

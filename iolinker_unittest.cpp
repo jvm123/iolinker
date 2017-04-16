@@ -57,6 +57,15 @@ uint8_t IOLinker_sim(unsigned char *s, uint8_t len)
             (strncmp((const char *)s, (const char *)buf_expectedmsg,
                 std::min(len, expectedmsg_len)) != 0 ||
                 expectedmsg_len != len)) {
+        printf("sim unittest error: (expected len: %d, actual len: %d)\n\t",
+                expectedmsg_len, len);
+        for (int i = 0; i < ((len > expectedmsg_len) ?
+                    len : expectedmsg_len); i++) {
+            printf("%x (got: %x) ",
+                    ((expectedmsg_len > i) ? buf_expectedmsg[i] : 0),
+                    ((len > i) ? s[i] : 0));
+        }
+        printf("\n");
         return 0;
     }
 
