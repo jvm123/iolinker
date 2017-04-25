@@ -1,12 +1,13 @@
 # IOLinker Python Library
 
-This is still under development and hardly tested. 
+This is still under development and hardly tested. Please send in improvements if you have some :)
 
 Dependencies: Python and pyserial.
+E.g. install with "sudo apt-get install python-serial"
 
 ## Usage
 
-'''
+```python
 import IOLinker
 import binascii
 
@@ -29,5 +30,5 @@ if iolinker.readInput(5):
 
 # Link P2 to P5
 iolinker.link(5, 2)
-'''
+```
 
