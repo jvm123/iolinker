@@ -287,12 +287,12 @@ void IOLinker::pwm(uint8_t pwm_r, uint16_t pin_start, uint16_t pin_end)
     finishAndReadReply();
 }
 
-void IOLinker::pwmPeriod(uint8_t per)
+/*void IOLinker::pwmPeriod(uint8_t per)
 {
     uint8_t buf[] = { IOLINKER_CMD_PER, argData(per) };
     writeMsg(buf, sizeof(buf));
     finishAndReadReply();
-}
+}*/
 
 void IOLinker::clearPinFunctions(uint16_t pin_start, uint16_t pin_end)
 {
@@ -470,13 +470,13 @@ uint8_t IOLinker::finishAndReadReply(uint8_t *s, uint8_t len)
     }
 
     /* Verify CRC */
-    if (crcBitOn(cmdByte(s, len))) {
+    /*if (crcBitOn(cmdByte(s, len))) {
         s[i - 1] <<= 1;
         
         if (crc7(s, i) != 0) {
             return i;
         }
-    }
+    }*/
 
     return i;
 }

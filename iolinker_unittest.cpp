@@ -472,11 +472,11 @@ void testmsg_pwm(void)
     //assert(IOLinker.statusCode() == IOLinker::IOLINKER_STATUS_SUCCESS);
 }
 
-void testmsg_per(void)
+/*void testmsg_per(void)
 {
     unsigned char 
          msg1[] = { IOLinker::IOLINKER_TARGET_FIRST, 0x86, 0x7f },
-         msg2[] = { /*IOLinker::IOLINKER_TARGET_FIRST, 0x86, IOLinker::IOLINKER_STATUS_SUCCESS*/ };
+         msg2[] = {  };
 
     IOLinker.beginTest((IOLinker::testfunc_t)IOLinker_sim,
             (uint8_t *)buf0, sizeof(buf0));
@@ -494,7 +494,7 @@ void testmsg_per(void)
     IOLinker.pwmPeriod(0x7f);
     assert(sim_success == 1);
     //assert(IOLinker.statusCode() == IOLinker::IOLINKER_STATUS_SUCCESS);
-}
+}*/
 
 uint8_t IOLinker_sim_range(unsigned char *s, uint8_t len)
 {
@@ -570,16 +570,16 @@ int main(void)
     for (int i = 0; i < 3; i++) {
         assert(IOLinker.argByte(buf, sizeof(buf), i) == buf[i]);
     }
-    assert(IOLinker.crcByte(buf, sizeof(buf)) == buf[sizeof(buf) - 1]);
+    //assert(IOLinker.crcByte(buf, sizeof(buf)) == buf[sizeof(buf) - 1]);
 
     assert(IOLinker.cmdBitOn(IOLinker::IOLINKER_BITMASK_CMD_BIT) == true);
     assert(IOLinker.cmdBitOn(0) == false);
     assert(IOLinker.rwBitOn(IOLinker::IOLINKER_BITMASK_RW_BIT) == true);
     assert(IOLinker.rwBitOn(0) == false);
-    assert(IOLinker.bufBitOn(IOLinker::IOLINKER_BITMASK_BUF_BIT) == true);
-    assert(IOLinker.bufBitOn(0) == false);
-    assert(IOLinker.crcBitOn(IOLinker::IOLINKER_BITMASK_CRC_BIT) == true);
-    assert(IOLinker.crcBitOn(0) == false);
+    //assert(IOLinker.bufBitOn(IOLinker::IOLINKER_BITMASK_BUF_BIT) == true);
+    //assert(IOLinker.bufBitOn(0) == false);
+    //assert(IOLinker.crcBitOn(IOLinker::IOLINKER_BITMASK_CRC_BIT) == true);
+    //assert(IOLinker.crcBitOn(0) == false);
     assert(IOLinker.commandCode(IOLinker::IOLINKER_CMD_VER) == IOLinker::IOLINKER_CMD_VER);
     assert(IOLinker.commandCode(IOLinker::IOLINKER_CMD_TYP) == IOLinker::IOLINKER_CMD_TYP);
     assert(IOLinker.argData(0xff) == 0x7f);
@@ -608,7 +608,7 @@ int main(void)
     testmsg_set();
     testmsg_lnk();
     testmsg_pwm();
-    testmsg_per();
+    //testmsg_per();
     testmsg_chainlength_firstaddress();
 
     fprintf(stderr, "%d tests failed.\n", failed);

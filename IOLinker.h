@@ -431,7 +431,7 @@ class IOLinker {
          * The resulting PWM period will be clk_period/(per+1)*128.
          * This command is only available in PRO versions of the IOLinker chip.
          */
-        void pwmPeriod(uint8_t per);
+        //void pwmPeriod(uint8_t per);
 
         /**
          * @brief CLR command: Clear pin links for pin range
@@ -485,12 +485,12 @@ class IOLinker {
             IOLINKER_BITMASK_CMD_BIT = (1 << 7), /*!< Command bytes contain this bit */
             IOLINKER_BITMASK_RW_BIT = (1 << 6), /*!< If this bit is 1, the message is
                                                      of type 'read' */
-            IOLINKER_BITMASK_BUF_BIT = (1 << 5), /*!< If this bit is 1, updated pin
-                                                      states are supposed to be
-                                                      buffered, rather than executed
-                                                      directly */
-            IOLINKER_BITMASK_CRC_BIT = (1 << 4), /*!< If this bit is 1, the message
-                                                      ends with a CRC byte */
+//            IOLINKER_BITMASK_BUF_BIT = (1 << 5), /*!< If this bit is 1, updated pin
+//                                                      states are supposed to be
+//                                                      buffered, rather than executed
+//                                                      directly */
+//            IOLINKER_BITMASK_CRC_BIT = (1 << 4), /*!< If this bit is 1, the message
+//                                                      ends with a CRC byte */
             IOLINKER_BITMASK_CMD = 0x4f, /*!< The part of the command byte that contains
                                               the actual command code; includes the RW
                                               bit as part of the command code */
@@ -554,18 +554,18 @@ class IOLinker {
         /**
          * @brief Extract state of BITMASK_BUF_BIT from byte
          */
-        inline bool bufBitOn(uint8_t b)
+        /*inline bool bufBitOn(uint8_t b)
         {
             return ((b & IOLINKER_BITMASK_BUF_BIT) != 0);
-        }
+        }*/
         
         /**
          * @brief Extract state of BITMASK_CRC_BIT from byte
          */
-        inline bool crcBitOn(uint8_t b)
+        /*inline bool crcBitOn(uint8_t b)
         {
             return ((b & IOLINKER_BITMASK_CRC_BIT) != 0);
-        }
+        }*/
         
         /**
          * @brief Extract command code from byte
@@ -763,13 +763,13 @@ class IOLinker {
         /**
          * @brief Write out CRC if applicable
          */
-        inline bool writeCRC(void)
+        /*inline bool writeCRC(void)
         {
             if (crcBitOn(cmdbyte)) {
                 //printf("CRC 0x%x\n", __crc);
                 writeMsg(&__crc, 1);
             }
-        }
+        }*/
 };
 
 #endif /* __IOLINKER_H__ */

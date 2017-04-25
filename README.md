@@ -163,15 +163,6 @@ iolinker.setOutput(true, 6, 15); // PWM output is only active when the pins are 
 iolinker.setOutput(false, 12); // Turn PWM output on P12 back off, just for demonstration
 ```
 
-### Change PWM period
-
-PWM period can only be set for all pins simultaneously.
-
-```c++
-iolinker.pwmPeriod(0); // Shortest period
-iolinker.pwmPeriod(127); // Longest period
-```
-
 ### Synchronizing pin updates
 
 If you are updating a lot of pins individually and want the effect to be simultaneous, the iolinker chips allow to buffer pin settings. For that purpose, you first use the SYN command with *iolinker.beginBuffering()*, then run your pin update commands, and then trigger the simultaneous pin update using the TRG command with *iolinker.executeBuffer()*.
