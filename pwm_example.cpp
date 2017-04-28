@@ -25,7 +25,7 @@ int main(void)
     /* Initialize class */
     IOLinker iolinker;
 
-    iolinker.beginSerial();
+    iolinker.beginSerial("/dev/ttyUSB0");
     iolinker.targetAddress(0x7f);
     /*uint8_t idx = iolinker.firstAddress();
     printf("The first slave address is %d, and the chain length from there is %d.\n",
@@ -34,14 +34,28 @@ int main(void)
     if (iolinker.version() != 0x131) {
         printf("ERROR: No response from iolinker (version %x).\n",
                 iolinker.version());
-        return 0;
+        //return 0;
+    } else {
+        printf("iolinker is responding.\n");
     }
-    printf("iolinker is responding.\n");
+        
+    printf("Version %x.\n",
+            iolinker.version());
     iolinker.clearPinFunctions(0, 48);
 
-    uint8_t led1 = 0, led4 = 7;
+    uint8_t led1 = 0, led4 = 7, button = 2;
     iolinker.setPinType(IOLinker::IOLINKER_OUTPUT, 8);
+    iolinker.setPinType(IOLinker::IOLINKER_INPUT, button);
     iolinker.setOutput(true, 8);
+
+    if (iolinker.readInput(button)) {
+        printf("Input %d is high.\n", button);
+    } else {
+        printf("Input %d is low.\n", button);
+    }
+
+    printf("Press the push button to start!\n");
+    while (!iolinker.readInput(button)) {}
 
     iolinker.setPinType(IOLinker::IOLINKER_OUTPUT, led1, led4);
 
