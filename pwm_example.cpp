@@ -41,9 +41,9 @@ int main(void)
         
     printf("Version %x.\n",
             iolinker.version());
-    iolinker.clearPinFunctions(0, 48);
+    iolinker.clearPinFunctions(1, 49);
 
-    uint8_t led1 = 0, led4 = 7, button = 2;
+    uint8_t led1 = 1, led4 = 7, button = 2;
     iolinker.setPinType(IOLinker::IOLINKER_OUTPUT, 8);
     iolinker.setPinType(IOLinker::IOLINKER_INPUT, button);
     iolinker.setOutput(true, 8);

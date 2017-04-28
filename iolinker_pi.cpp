@@ -25,9 +25,9 @@
 IOLinker iolinker;
 
 void resetschematic() {
-  iolinker.pwm(127, 0, 48);
-  iolinker.clearPinFunctions(0, 48);
-  iolinker.setPinType(IOLinker::IOLINKER_INPUT, 0, 48);
+  iolinker.pwm(127, 1, 49);
+  iolinker.clearPinFunctions(1, 49);
+  iolinker.setPinType(IOLinker::IOLINKER_INPUT, 1, 49);
 }
 
 int main(void)
