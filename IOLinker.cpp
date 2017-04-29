@@ -399,7 +399,7 @@ uint8_t IOLinker::finishAndReadReply(uint8_t *s, uint8_t len)
         if (interface_mode == IOLINKER_UART) {
             for (int timeout = 10; (!serialDataAvail(interface_fd)
                     && timeout > 0); timeout--) {
-                delayMicroseconds(10000);
+                delayMicroseconds(100);
             }
         } else if (interface_mode == IOLINKER_SPI) {
             uint8_t buf[] = { 0 };
@@ -444,7 +444,12 @@ uint8_t IOLinker::finishAndReadReply(uint8_t *s, uint8_t len)
         digitalWrite(__IOLINKER_SPI_CS, HIGH); // unselect
         SPI.endTransaction();
     } else if (interface_mode == IOLINKER_UART) {
+        /* These delays assume a baudrate of 115.2kBaud */
+        delayMicroseconds(560); /* ~550us for message to be written out,
+                                   and ~8us until the first reply byte
+                                   begins */
         for (; i < len; i++) {
+            delayMicroseconds(80); // transfer time per byte
             s[i] = interface_stream->read();
         }
     }
