@@ -32,61 +32,75 @@ void resetschematic() {
 
 int main(void)
 {
+    uint16_t ver;
     wiringPiSetup();
 
+    //iolinker.beginSerial("/dev/ttyAMA0");
     //iolinker.beginSPI(0);
-    //iolinker.beginI2C();
-    iolinker.beginSerial("/dev/ttyAMA0");
+    iolinker.beginI2C();
     iolinker.targetAddress(0x7f);
-    iolinker.setPinType(IOLinker::IOLINKER_INPUT, 32); /* Arduino0 servo output */
-    iolinker.setPinType(IOLinker::IOLINKER_OUTPUT, 47); /* Servo output */
-    iolinker.link(32, 47);
-return 1;
-    if (iolinker.version() != 0x131) {
-        printf("ERROR: No response from iolinker (version %x).\n",
-                iolinker.version());
+    
+    if ((ver = iolinker.version()) != 0x131) {
+        printf("ERROR: No response from iolinker (version %x).\n", ver);
         return 0;
-    }
-    printf("iolinker is responding.\n");
-
-    //resetschematic();
-
-    iolinker.setPinType(IOLinker::IOLINKER_INPUT, 43, 49); /* Arduino 1 LCD connections */
-    usleep(10000);
-    iolinker.setPinType(IOLinker::IOLINKER_OUTPUT, 13, 19); /* LCD outputs */
-    usleep(10000);
-
-    for (int i = 0; i < 6; i++) {
-        //iolinker.link(33 + i, 13 + i); /* Link Arduino 0 to LCD */
-        usleep(10000);
+    } else {
+        printf("iolinker is responding (version %x).\n", ver);
     }
 
-    for (int i = 0; i < 6; i++) {
-        //iolinker.link(21 + i*2, 13 + i); /* Link Arduino 1 to LCD */
-        usleep(10000);
-    }
+    resetschematic();
 
-    for (int i = 0; i < 6; i++) {
-        //iolinker.link(20 + i*2, 13 + i); /* Link Arduino 2 to LCD */
-        usleep(10000);
-    }
-
-    for (int i = 0; i < 6; i++) {
-        iolinker.link(1 + i*2, 13 + i); /* Link Arduino 3 to LCD */
-        usleep(10000);
-    }
-
-    iolinker.setPinType(IOLinker::IOLINKER_OUTPUT, 43); /* Servo GND */
-    iolinker.setPinType(IOLinker::IOLINKER_OUTPUT, 45); /* Servo VCC */
-    iolinker.setOutput(false, 43);
-    iolinker.setOutput(true, 45);
-    iolinker.setPinType(IOLinker::IOLINKER_INPUT, 32); /* Arduino0 servo output */
-    iolinker.setPinType(IOLinker::IOLINKER_OUTPUT, 47); /* Servo output */
-    iolinker.link(32, 47);
-
-    return 1;
-    uint8_t id = iolinker.firstAddress();
+    /*uint8_t id = iolinker.firstAddress();
     printf("The first slave address is %d, and the chain length from there is %d.\n",
-            id, iolinker.chainLength(id));
+            id, iolinker.chainLength(id));*/
+
+    uint8_t led1 = 1, led4 = 7, button = 2;
+    iolinker.setPinType(IOLinker::IOLINKER_INPUT, button);
+
+    if (iolinker.readInput(button)) {
+        printf("Input %d is high.\n", button);
+    } else {
+        printf("Input %d is low.\n", button);
+    }
+
+    printf("Press the push button to start!\n");
+    while (!iolinker.readInput(button)) {}
+
+    iolinker.setPinType(IOLinker::IOLINKER_OUTPUT, led1, led4);
+
+    printf("Set pins %d to %d high.\n", led1, led4);
+    iolinker.setOutput(true, led1, led4);
+    usleep(100000);
+
+    setbuf(stdout, NULL);
+    for (uint8_t j = 0; j < 4 || 1; j++) {
+        printf("PWM");
+        for (uint8_t i = 0; i < 128; i++) {
+            printf(" %d", i);
+            iolinker.pwm(i, led4 - 1);
+            iolinker.pwm(127 - i, led1, led4 - 2);
+            iolinker.pwm(i, led4);
+            usleep(5000);
+        }
+        printf("\n");
+        printf("PWM");
+        for (uint8_t i = 127; i > 0; i--) {
+            printf(" %d", i);
+            iolinker.pwm(i, led4 - 1);
+            iolinker.pwm(127 - i, led1, led4 - 2);
+            iolinker.pwm(i, led4);
+            usleep(5000);
+        }
+        printf("\n");
+    }
+
+    /*iolinker.pwm(100, led1, led4);
+    printf("Link %d to %d with pin 11.\n", led1, led4);
+    iolinker.link(11, led1, led4);
+    printf("Sleeping 10s...\n");
+    sleep(10);
+    printf("Link %d to %d with pin 11.\n", led1, led4);
+    iolinker.clearPinFunctions(led1, led4);
+    iolinker.link(11, led1, led4);*/
+    return 1;
 }
 
