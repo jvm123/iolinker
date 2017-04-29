@@ -5,6 +5,8 @@ The IOLinker Python class, to connect serially to a compatible IOLinker chip
 # MIT License
 
 import serial
+import binascii
+import time
 
 class IOLinker:
     IOLINKER_BITMASK_RW_BIT = (1 << 6)
@@ -71,10 +73,13 @@ class IOLinker:
         if readlength == 0:
             return True
 
-        read = ""
+        read = [ ]
+        time.sleep(0.01)
         while self.ser.inWaiting() > 0:
-            read += ser.read(1)
-        return read
+            c = self.ser.read(1)
+#print("Got byte: " + binascii.hexlify(c))
+            read.append(c)
+        return bytearray(read)
 
     """
     Requests the version from the chip
@@ -82,13 +87,14 @@ class IOLinker:
     def version(self):
         buf = [ self.IOLINKER_CMD_VER ]
         data = self.sendAndRead(bytearray(buf), 2)
-        return data[0:1]
+        return data
 
     """
     Determines if the chip is replying
     """
     def available(self):
-        return (self.version() != 0)
+        version = self.version()
+        return (len(version) > 0 and version != 0)
 
     """
     Sets pin type for a pin range
@@ -98,7 +104,7 @@ class IOLinker:
             self.argData(pin_start), self.argData(pin_start >> 7),
             self.argData(pin_end), self.argData(pin_end >> 7),
             self.argData(pin_type) ]
-        return self.sendAndRead(bytearray(buf))
+        return self.sendAndRead(bytearray(buf), 0)
 
     """
     Reads register from iolinker chip
@@ -108,7 +114,7 @@ class IOLinker:
             b"\x27", # read register code
             self.argData(addr), 0, 0 ]
         data = self.sendAndRead(bytearray(buf), 1)
-        return data[0]
+        return data
 
     """
     Read pin state
@@ -118,7 +124,11 @@ class IOLinker:
             self.argData(pin), self.argData(pin >> 7),
             0, 0 ] # single pin, so second pin number in range is 0
         data = self.sendAndRead(bytearray(buf), 1)
-        return data[0]
+       
+        if len(data) == 0 or not data[0] == int("40", 16):
+            return False
+
+        return True
 
 #    """
 #    Read several pin states
@@ -153,21 +163,21 @@ class IOLinker:
 #            self.argData(pin_start), self.argData(pin_start >> 7),
 #            self.argData(pin_end), self.argData(pin_end >> 7), ]
 #        # TODO: add states to buf
-#        return self.sendAndRead(bytearray(buf))
+#        return self.sendAndRead(bytearray(buf), 0)
 
     """
     Start buffering
     """
     def beginBuffering(self):
         buf = [ self.IOLINKER_CMD_SYN ]
-        return self.sendAndRead(bytearray(buf))
+        return self.sendAndRead(bytearray(buf), 0)
 
     """
     Execute buffer and end buffering
     """
     def executeBuffer(self):
         buf = [ self.IOLINKER_CMD_TRG ]
-        return self.sendAndRead(bytearray(buf))
+        return self.sendAndRead(bytearray(buf), 0)
 
     """
     Link pin range to target pin
@@ -177,7 +187,7 @@ class IOLinker:
             self.argData(pin_start), self.argData(pin_start >> 7),
             self.argData(pin_end), self.argData(pin_end >> 7),
             self.argData(target_pin), self.argData(target_pin >> 7), ]
-        return self.sendAndRead(bytearray(buf))
+        return self.sendAndRead(bytearray(buf), 0)
 
     """
     Set PWM value
@@ -186,8 +196,8 @@ class IOLinker:
         buf = [ self.IOLINKER_CMD_PWM, 
             self.argData(pin_start), self.argData(pin_start >> 7),
             self.argData(pin_end), self.argData(pin_end >> 7),
-            round(self.argData(pwm_r / 100 * 127)) ]
-        return self.sendAndRead(bytearray(buf))
+            self.argData(int(round(float(pwm_r) / 100 * 127))) ]
+        return self.sendAndRead(bytearray(buf), 0)
 
 #    """
 #    Set PWM period
@@ -219,10 +229,10 @@ class IOLinker:
     """
     def firstAddress(self):
         for i in range(0, 127):
-            self.targetAddress(i)
+            self.targetAddress(str(unichr(i)))
             if self.available():
                 return i
-        return False
+        return 127
 
     """
     Determine number of chips that are available with sequential target
@@ -233,10 +243,10 @@ class IOLinker:
         bak = self.targetaddr
 
         while True:
-            targetAddress(start + chainlen)
+            self.targetAddress(str(unichr(start + chainlen)))
             chainlen += 1
             if (start + chainlen) > 127 or not self.available():
                 break
-        targetAddress(bak)
+        self.targetAddress(bak)
         return chainlen - 1
 
