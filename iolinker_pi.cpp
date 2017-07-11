@@ -35,14 +35,14 @@ int main(void)
     uint16_t ver;
     wiringPiSetup();
 
-    //iolinker.beginSerial("/dev/ttyAMA0");
+    iolinker.beginSerial("/dev/ttyAMA0");
     //iolinker.beginSPI(0);
-    iolinker.beginI2C();
+    //iolinker.beginI2C();
     iolinker.targetAddress(0x7f);
     
-    if ((ver = iolinker.version()) != 0x131) {
+    if ((ver = iolinker.version()) == 0) {
         printf("ERROR: No response from iolinker (version %x).\n", ver);
-        return 0;
+        //return 0;
     } else {
         printf("iolinker is responding (version %x).\n", ver);
     }

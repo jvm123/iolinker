@@ -31,7 +31,7 @@ int main(void)
     printf("The first slave address is %d, and the chain length from there is %d.\n",
             idx, iolinker.chainLength(idx));
 */
-    if (iolinker.version() != 0x131) {
+    if (iolinker.version() == 0) {
         printf("ERROR: No response from iolinker (version %x).\n",
                 iolinker.version());
         //return 0;

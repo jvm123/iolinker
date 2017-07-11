@@ -107,10 +107,10 @@ int main(void)
 {
     iolinker.beginSerial();
     iolinker.targetAddress(0x7f);
-    if (iolinker.version() != 0x131) {
+    if (iolinker.version() == 0) {
         printf("ERROR: No response from iolinker (version %x).\n",
                 iolinker.version());
-        return 0;
+        //return 0;
     }
     printf("iolinker is responding.\n");
     resetschematic();
